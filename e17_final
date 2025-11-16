@@ -2605,57 +2605,186 @@ if __name__ == "__main__":
             self.iteration_count = iteration
 
             try:
-                alpha_hunter_logger.info(f"🔄 CONTINUOUS-ALPHA Iteration {iteration}")
+                # ═══════════════════════════════════════════════════════════════
+                # 📢 ITERATION START NARRATION
+                # ═══════════════════════════════════════════════════════════════
+                alpha_hunter_logger.info("=" * 80)
+                alpha_hunter_logger.info(f"🔄 ITERATION {iteration} START")
+                alpha_hunter_logger.info("=" * 80)
+                alpha_hunter_logger.info(f"📊 Current Status:")
+                alpha_hunter_logger.info(f"   • Active Champions: {len(self.active_champions)}")
+                alpha_hunter_logger.info(f"   • Total Iterations: {iteration - 1} completed")
+                alpha_hunter_logger.info(f"   • Errors in Memory: {len(self.error_memory)}")
+                alpha_hunter_logger.info(f"🎯 Goal: Hunt for alpha-generating strategies with AI agents")
+                alpha_hunter_logger.info("=" * 80)
+                
                 self._log_phase_progress("alpha_hunting", iteration, "start", f"Iteration {iteration}")
-                # Capture iteration start in monitoring
                 self.monitoring_agent.capture_iteration_start(iteration, {})
                 
-                # Enhanced reasoning with agent ecosystem
+                # ═══════════════════════════════════════════════════════════════
+                # 🧠 PHASE 1: SUPER REASONER - Building Execution Plan
+                # ═══════════════════════════════════════════════════════════════
+                alpha_hunter_logger.info("")
+                alpha_hunter_logger.info("┌─────────────────────────────────────────────────────────┐")
+                alpha_hunter_logger.info("│ 🧠 PHASE 1: SUPER REASONER                              │")
+                alpha_hunter_logger.info("└─────────────────────────────────────────────────────────┘")
+                alpha_hunter_logger.info("📝 What's happening:")
+                alpha_hunter_logger.info("   • Analyzing market conditions and opportunities")
+                alpha_hunter_logger.info("   • Building agent ecosystem (researchers, analysts, risk managers)")
+                alpha_hunter_logger.info("   • Creating architecture plan for trading strategy")
+                alpha_hunter_logger.info("   • Defining files to generate (strategies, backtester, data feeds)")
+                alpha_hunter_logger.info("🎯 Output: Complete execution plan with agent roles")
+                
                 self._log_phase_progress("reasoner", iteration, "info", "Building plan with agents")
                 plan = self.super_reasoner_phase()
                 
-                # Capture plan in monitoring
+                alpha_hunter_logger.info(f"✅ Plan created: {len(plan.get('files', []))} files to generate")
+                alpha_hunter_logger.info(f"   • Files: {[f.get('path') for f in plan.get('files', [])]}")
                 self.monitoring_agent.capture_iteration_start(iteration, plan)
 
-                # Enhanced coding with agent generation
+                # ═══════════════════════════════════════════════════════════════
+                # 🛠️ PHASE 2: EXPERT CODER - Generating Code + AI Agents
+                # ═══════════════════════════════════════════════════════════════
+                alpha_hunter_logger.info("")
+                alpha_hunter_logger.info("┌─────────────────────────────────────────────────────────┐")
+                alpha_hunter_logger.info("│ 🛠️ PHASE 2: EXPERT CODER                                │")
+                alpha_hunter_logger.info("└─────────────────────────────────────────────────────────┘")
+                alpha_hunter_logger.info("📝 What's happening:")
+                alpha_hunter_logger.info("   • Generating Python code for each file in the plan")
+                alpha_hunter_logger.info("   • Creating AI agent modules (whale hunters, pattern detectors)")
+                alpha_hunter_logger.info("   • Building trading strategies that use the agents")
+                alpha_hunter_logger.info("   • Integrating real-time data feeds and backtesting")
+                alpha_hunter_logger.info("🎯 Output: Complete codebase ready to execute")
+                
                 self._log_phase_progress("coder", iteration, "info", "Generating code + agents")
                 self.monitoring_agent.capture_phase_start("expert_coder", {"iteration": iteration})
+                
                 code_files = self.expert_coder_phase(plan)
                 project_dir = self._create_iteration_project(plan, code_files)
                 self.current_project_dir = project_dir
                 
-                # Log files generated
+                total_lines = sum(len(code.split('\n')) for code in code_files.values())
+                alpha_hunter_logger.info(f"✅ Code generated: {len(code_files)} files, {total_lines:,} lines total")
+                for filename, code in code_files.items():
+                    line_count = len(code.split('\n'))
+                    alpha_hunter_logger.info(f"   • {filename}: {line_count:,} lines")
+                
                 self.monitoring_agent.capture_agent_activity("expert_coder", "files_generated", {
                     "count": len(code_files),
-                    "files": list(code_files.keys())
+                    "files": list(code_files.keys()),
+                    "total_lines": total_lines
                 })
 
-                # Enhanced validation with alpha focus
+                # ═══════════════════════════════════════════════════════════════
+                # 🎯 PHASE 3: ALPHA VALIDATOR - Checking Strategy Quality
+                # ═══════════════════════════════════════════════════════════════
+                alpha_hunter_logger.info("")
+                alpha_hunter_logger.info("┌─────────────────────────────────────────────────────────┐")
+                alpha_hunter_logger.info("│ 🎯 PHASE 3: ALPHA VALIDATOR                             │")
+                alpha_hunter_logger.info("└─────────────────────────────────────────────────────────┘")
+                alpha_hunter_logger.info("📝 What's happening:")
+                alpha_hunter_logger.info("   • Analyzing strategy sophistication (alpha score)")
+                alpha_hunter_logger.info("   • Checking for signal diversity and edge detection")
+                alpha_hunter_logger.info("   • Validating risk management and position sizing")
+                alpha_hunter_logger.info(f"   • Threshold: Alpha score must be ≥ {self.INITIAL_ALPHA_THRESHOLD}")
+                alpha_hunter_logger.info("🎯 Output: Strategy viability decision")
+                
                 self._log_phase_progress("enforcer", iteration, "info", "Alpha validation")
                 viable = self.min_trades_enforcer.enforce_live_strategy_alpha(plan, project_dir)
+                
                 if not viable:
+                    alpha_hunter_logger.info("❌ Strategy NOT viable - alpha score too low")
+                    alpha_hunter_logger.info("   → Strategy discarded, moving to next iteration")
                     self._log_phase_progress("enforcer", iteration, "warning", "Strategy not viable")
                     self.monitoring_agent.capture_iteration_end(iteration, {"status": "not_viable"})
                     continue
+                
+                alpha_hunter_logger.info("✅ Strategy VIABLE - alpha score meets threshold")
 
-                # Runtime validation
+                # ═══════════════════════════════════════════════════════════════
+                # 🔧 PHASE 4: RUNTIME TESTER - Validating Code Execution
+                # ═══════════════════════════════════════════════════════════════
+                alpha_hunter_logger.info("")
+                alpha_hunter_logger.info("┌─────────────────────────────────────────────────────────┐")
+                alpha_hunter_logger.info("│ 🔧 PHASE 4: RUNTIME TESTER                              │")
+                alpha_hunter_logger.info("└─────────────────────────────────────────────────────────┘")
+                alpha_hunter_logger.info("📝 What's happening:")
+                alpha_hunter_logger.info("   • Loading and importing all generated modules")
+                alpha_hunter_logger.info("   • Testing strategy instantiation and signal generation")
+                alpha_hunter_logger.info("   • Auto-fixing syntax errors and import issues (max 3 attempts)")
+                alpha_hunter_logger.info("   • Validating data feed connections")
+                alpha_hunter_logger.info("🎯 Output: Runtime-ready strategy or failure report")
+                
                 self._log_phase_progress("runtime", iteration, "info", "Runtime testing")
                 startup_ok = self._runtime_auto_fix_loop(project_dir)
+                
                 if not startup_ok:
+                    alpha_hunter_logger.info("❌ Runtime validation FAILED - code won't execute")
+                    alpha_hunter_logger.info("   → Auto-fix attempts exhausted, discarding strategy")
                     self._log_phase_progress("runtime", iteration, "error", "Startup failed")
                     self.monitoring_agent.capture_iteration_end(iteration, {"status": "startup_failed"})
                     continue
+                
+                alpha_hunter_logger.info("✅ Runtime validation PASSED - code executes successfully")
 
-                # Performance testing
+                # ═══════════════════════════════════════════════════════════════
+                # 📈 PHASE 5: PAPER TRADING - Performance Evaluation
+                # ═══════════════════════════════════════════════════════════════
+                alpha_hunter_logger.info("")
+                alpha_hunter_logger.info("┌─────────────────────────────────────────────────────────┐")
+                alpha_hunter_logger.info("│ 📈 PHASE 5: PAPER TRADING                               │")
+                alpha_hunter_logger.info("└─────────────────────────────────────────────────────────┘")
+                alpha_hunter_logger.info("📝 What's happening:")
+                alpha_hunter_logger.info("   • Backtesting strategy on historical market data")
+                alpha_hunter_logger.info("   • Calculating performance metrics (win rate, profit factor, Sharpe)")
+                alpha_hunter_logger.info("   • Measuring risk metrics (max drawdown, volatility)")
+                alpha_hunter_logger.info("   • Simulating live trading with slippage and fees")
+                alpha_hunter_logger.info("🎯 Output: Performance report with champion eligibility")
+                
                 self._log_phase_progress("performance", iteration, "info", "Paper trading")
                 performance_data = self.run_real_paper_trading(project_dir)
                 
-                # Capture strategy performance
+                # Display performance metrics
+                alpha_hunter_logger.info("📊 Performance Results:")
+                alpha_hunter_logger.info(f"   • Total Trades: {performance_data.get('total_trades', 0)}")
+                alpha_hunter_logger.info(f"   • Win Rate: {performance_data.get('win_rate', 0):.1%}")
+                alpha_hunter_logger.info(f"   • Profit Factor: {performance_data.get('profit_factor', 0):.2f}")
+                alpha_hunter_logger.info(f"   • Max Drawdown: {performance_data.get('max_drawdown', 0):.1%}")
+                alpha_hunter_logger.info(f"   • Sharpe Ratio: {performance_data.get('sharpe_ratio', 0):.2f}")
+                
                 self.monitoring_agent.capture_strategy_performance(iteration, performance_data)
 
+                # ═══════════════════════════════════════════════════════════════
+                # 🏆 PHASE 6: CHAMPION EVALUATION - Promotion Decision
+                # ═══════════════════════════════════════════════════════════════
+                alpha_hunter_logger.info("")
+                alpha_hunter_logger.info("┌─────────────────────────────────────────────────────────┐")
+                alpha_hunter_logger.info("│ 🏆 PHASE 6: CHAMPION EVALUATION                         │")
+                alpha_hunter_logger.info("└─────────────────────────────────────────────────────────┘")
+                alpha_hunter_logger.info("📝 What's happening:")
+                alpha_hunter_logger.info("   • Comparing performance against champion criteria:")
+                alpha_hunter_logger.info(f"     - Min trades: ≥ 20 (current: {performance_data.get('total_trades', 0)})")
+                alpha_hunter_logger.info(f"     - Win rate: ≥ 55% (current: {performance_data.get('win_rate', 0):.1%})")
+                alpha_hunter_logger.info(f"     - Profit factor: ≥ 1.2 (current: {performance_data.get('profit_factor', 0):.2f})")
+                alpha_hunter_logger.info(f"     - Max drawdown: ≤ 30% (current: {performance_data.get('max_drawdown', 0):.1%})")
+                alpha_hunter_logger.info("🎯 Output: Champion promotion or iteration completion")
+                
                 # 🏆 CHAMPION PROMOTION & CONTINUOUS TRADING
                 if self._is_champion_material(performance_data):
                     champion_id = f"champion_{iteration}_{int(time.time())}"
+                    
+                    alpha_hunter_logger.info("")
+                    alpha_hunter_logger.info("🎉" * 40)
+                    alpha_hunter_logger.info(f"🏆 CHAMPION PROMOTED: {champion_id}")
+                    alpha_hunter_logger.info("🎉" * 40)
+                    alpha_hunter_logger.info("✅ Strategy meets ALL champion criteria!")
+                    alpha_hunter_logger.info(f"📊 Performance Summary:")
+                    alpha_hunter_logger.info(f"   • Trades: {performance_data.get('total_trades', 0)} ✓")
+                    alpha_hunter_logger.info(f"   • Win Rate: {performance_data.get('win_rate', 0):.1%} ✓")
+                    alpha_hunter_logger.info(f"   • Profit Factor: {performance_data.get('profit_factor', 0):.2f} ✓")
+                    alpha_hunter_logger.info(f"   • Drawdown: {performance_data.get('max_drawdown', 0):.1%} ✓")
+                    alpha_hunter_logger.info(f"🎯 Action: Starting LIVE continuous trading for this champion")
+                    alpha_hunter_logger.info(f"📁 Project: {project_dir}")
 
                     # Promote to active champion
                     self.active_champions.append({
@@ -2665,7 +2794,6 @@ if __name__ == "__main__":
                         "created_at": datetime.now()
                     })
 
-                    alpha_hunter_logger.info(f"🏆 NEW_CHAMPION_PROMOTED: {champion_id}")
                     self._log_phase_progress("champion", iteration, "success", f"New champion: {champion_id}")
 
                     # 🎯 START CONTINUOUS TRADING for this champion
@@ -2677,20 +2805,55 @@ if __name__ == "__main__":
                         "champion_id": champion_id,
                         "performance": performance_data
                     })
+                    
+                    alpha_hunter_logger.info(f"📢 Total active champions: {len(self.active_champions)}")
                 else:
+                    alpha_hunter_logger.info("")
+                    alpha_hunter_logger.info("⚠️ Strategy does NOT meet champion criteria")
+                    alpha_hunter_logger.info("❌ Failed criteria:")
+                    
+                    if performance_data.get('total_trades', 0) < 20:
+                        alpha_hunter_logger.info(f"   • Trades: {performance_data.get('total_trades', 0)} < 20 required")
+                    if performance_data.get('win_rate', 0) < 0.55:
+                        alpha_hunter_logger.info(f"   • Win Rate: {performance_data.get('win_rate', 0):.1%} < 55% required")
+                    if performance_data.get('profit_factor', 0) < 1.2:
+                        alpha_hunter_logger.info(f"   • Profit Factor: {performance_data.get('profit_factor', 0):.2f} < 1.2 required")
+                    if performance_data.get('max_drawdown', 0) > 0.30:
+                        alpha_hunter_logger.info(f"   • Drawdown: {performance_data.get('max_drawdown', 0):.1%} > 30% limit")
+                    
+                    alpha_hunter_logger.info("🔄 Insights will be used to improve next iteration")
+                    
                     self.monitoring_agent.capture_iteration_end(iteration, {
                         "status": "completed_no_champion",
                         "performance": performance_data
                     })
 
+                # ═══════════════════════════════════════════════════════════════
+                # 🔄 ITERATION COMPLETE - Preparing for Next Hunt
+                # ═══════════════════════════════════════════════════════════════
+                alpha_hunter_logger.info("")
+                alpha_hunter_logger.info("=" * 80)
+                alpha_hunter_logger.info(f"✅ ITERATION {iteration} COMPLETE")
+                alpha_hunter_logger.info("=" * 80)
+                alpha_hunter_logger.info(f"📊 Iteration Summary:")
+                alpha_hunter_logger.info(f"   • Files Generated: {len(code_files)}")
+                alpha_hunter_logger.info(f"   • Lines of Code: {sum(len(c.split('\\n')) for c in code_files.values()):,}")
+                alpha_hunter_logger.info(f"   • Alpha Validated: {'✅ Yes' if viable else '❌ No'}")
+                alpha_hunter_logger.info(f"   • Runtime Tested: {'✅ Passed' if startup_ok else '❌ Failed'}")
+                alpha_hunter_logger.info(f"   • Performance: {performance_data.get('total_trades', 0)} trades, {performance_data.get('win_rate', 0):.1%} win rate")
+                alpha_hunter_logger.info(f"   • Champion Status: {'🏆 PROMOTED' if self._is_champion_material(performance_data) else '⚠️ Not qualified'}")
+                alpha_hunter_logger.info(f"🎯 Next: Launching iteration {iteration + 1}")
+                alpha_hunter_logger.info("=" * 80)
+                alpha_hunter_logger.info("")
+                
                 # 🧠 START NEW ALPHA HUNTING LOOP IMMEDIATELY
-                alpha_hunter_logger.info("🧠 LAUNCHING_NEW_ALPHA_HUNTING_LOOP")
                 self._log_phase_progress("alpha_hunting", iteration, "info", "Launching next hunt")
                 # Loop continues automatically
 
                 self._log_phase_progress("alpha_hunting", iteration, "complete", f"Completed iteration {iteration}")
                 
                 # 💾 P2: Save checkpoint after successful iteration
+                alpha_hunter_logger.info("💾 Saving checkpoint...")
                 checkpoint_state = {
                     'iteration': iteration,
                     'champions': self.active_champions,
@@ -2699,6 +2862,7 @@ if __name__ == "__main__":
                     'error_memory': self.error_memory[-10:],  # Keep last 10 errors
                 }
                 self.checkpoint_manager.save_checkpoint(iteration, checkpoint_state)
+                alpha_hunter_logger.info("✅ Checkpoint saved - can resume from here if crashed")
                 
                 # 💗 P2: Update heartbeat statistics
                 self.heartbeat_monitor.update_stats(
@@ -2711,23 +2875,43 @@ if __name__ == "__main__":
                 consecutive_failures = 0
 
             except KeyboardInterrupt:
-                alpha_hunter_logger.info("🛑 User stopped the system - shutting down gracefully")
+                alpha_hunter_logger.info("")
+                alpha_hunter_logger.info("=" * 80)
+                alpha_hunter_logger.info("🛑 USER STOPPED THE SYSTEM")
+                alpha_hunter_logger.info("=" * 80)
+                alpha_hunter_logger.info("📝 Graceful shutdown in progress...")
+                alpha_hunter_logger.info(f"   • Stopping heartbeat monitor")
+                alpha_hunter_logger.info(f"   • Completed {iteration} iterations")
+                alpha_hunter_logger.info(f"   • Active champions: {len(self.active_champions)}")
+                alpha_hunter_logger.info("✅ Shutdown complete")
                 self.heartbeat_monitor.stop()
                 break
 
             except Exception as e:
                 consecutive_failures += 1
                 error_logger = logging.getLogger("Bot.ERROR")
-                error_logger.error(f"❌ ITERATION {iteration} CRASHED: {e}")
-                error_logger.error(f"   Traceback: {traceback.format_exc()}")
-                error_logger.warning(f"   Failures: {consecutive_failures}/{MAX_FAILURES}")
+                
+                error_logger.info("")
+                error_logger.info("=" * 80)
+                error_logger.info(f"❌ ITERATION {iteration} CRASHED")
+                error_logger.info("=" * 80)
+                error_logger.error(f"🐛 Error Type: {type(e).__name__}")
+                error_logger.error(f"🐛 Error Message: {e}")
+                error_logger.error(f"📊 Failure Count: {consecutive_failures}/{MAX_FAILURES}")
+                error_logger.error(f"🔄 Auto-Recovery: {'✅ Will retry' if consecutive_failures < MAX_FAILURES else '❌ Max failures reached'}")
+                error_logger.error("")
+                error_logger.error("📜 Full Traceback:")
+                error_logger.error(traceback.format_exc())
+                error_logger.info("=" * 80)
                 
                 self._log_phase_progress("alpha_hunting", iteration, "error", f"Failed: {str(e)[:100]}")
                 self.error_memory.append({
                     "iteration": iteration, 
                     "error": str(e),
                     "traceback": traceback.format_exc(),
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
+                    "consecutive_failures": consecutive_failures,
+                    "error_type": type(e).__name__
                 })
                 
                 # 💗 P2: Update heartbeat with error count
@@ -2736,7 +2920,14 @@ if __name__ == "__main__":
                 )
                 
                 if consecutive_failures >= MAX_FAILURES:
-                    error_logger.critical("🚨 TOO MANY CRASHES - EMERGENCY SHUTDOWN")
+                    error_logger.info("")
+                    error_logger.critical("🚨" * 40)
+                    error_logger.critical("🚨 TOO MANY CONSECUTIVE FAILURES")
+                    error_logger.critical("🚨" * 40)
+                    error_logger.critical(f"💥 Failed {MAX_FAILURES} times in a row")
+                    error_logger.critical(f"🛑 EMERGENCY SHUTDOWN")
+                    error_logger.critical("")
+                    
                     # 🐕 P2: Notify watchdog
                     if self.watchdog.should_restart(exit_code=1):
                         error_logger.warning("🐕 WATCHDOG: System would restart here in production")
@@ -2744,9 +2935,24 @@ if __name__ == "__main__":
                 
                 # Exponential backoff before retry (max 5 min)
                 wait_time = min(30 * (2 ** (consecutive_failures - 1)), 300)
-                error_logger.info(f"⏳ Recovering... waiting {wait_time}s before retry")
+                error_logger.info("")
+                error_logger.info("🔄" * 40)
+                error_logger.info("🔄 AUTO-RECOVERY IN PROGRESS")
+                error_logger.info("🔄" * 40)
+                error_logger.info(f"⏳ Waiting {wait_time}s before retry (exponential backoff)")
+                error_logger.info(f"💡 Why waiting: Give system time to stabilize")
+                error_logger.info(f"🎯 Next: Will retry iteration {iteration}")
+                error_logger.info("🔄" * 40)
+                
                 time.sleep(wait_time)
-                error_logger.info(f"🔄 RESTARTING iteration {iteration}")
+                
+                error_logger.info("")
+                error_logger.info("🔄 RESTARTING ITERATION {iteration}")
+                error_logger.info(f"   • Attempt {consecutive_failures + 1}/{MAX_FAILURES + 1}")
+                error_logger.info(f"   • Previous error: {type(e).__name__}")
+                error_logger.info(f"   • Strategy: Will try again with fresh state")
+                error_logger.info("")
+
 
     # =========================================================================================
     # ORIGINAL METHODS (preserved for compatibility)
