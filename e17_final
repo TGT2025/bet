@@ -2238,9 +2238,9 @@ if __name__ == "__main__":
         return api_path
     
     def start_monitoring_server(self):
-        """Start simple Flask monitoring server immediately"""
+        """Start comprehensive Flask monitoring server with all debugging endpoints"""
         try:
-            from flask import Flask, jsonify
+            from flask import Flask, jsonify, request
             from flask_cors import CORS
         except ImportError:
             logger.warning("Flask not installed. Install with: pip install flask flask-cors")
@@ -2255,6 +2255,32 @@ if __name__ == "__main__":
         # Reference to self for closures
         system = self
         
+        # Store system logs in memory for /api/logs endpoint
+        system.system_logs = []
+        
+        # Custom log handler to capture all logs
+        class LogCapture(logging.Handler):
+            def emit(self, record):
+                try:
+                    log_entry = {
+                        'timestamp': datetime.fromtimestamp(record.created).isoformat(),
+                        'level': record.levelname,
+                        'component': record.name.split('.')[-1] if '.' in record.name else record.name,
+                        'message': record.getMessage(),
+                        'iteration': getattr(system, 'iteration_count', 0)
+                    }
+                    system.system_logs.append(log_entry)
+                    # Keep only last 1000 logs
+                    if len(system.system_logs) > 1000:
+                        system.system_logs = system.system_logs[-1000:]
+                except:
+                    pass
+        
+        # Add log capture handler to root logger
+        log_capture = LogCapture()
+        log_capture.setLevel(logging.INFO)
+        logging.getLogger().addHandler(log_capture)
+        
         @app.route('/api/status')
         def status():
             return jsonify({
@@ -2264,7 +2290,9 @@ if __name__ == "__main__":
                 'champions': len(system.active_champions),
                 'last_heartbeat': system.heartbeat_monitor.last_heartbeat,
                 'health': 'healthy' if system.heartbeat_monitor.is_alive else 'warning',
-                'version': 'final'
+                'version': 'final',
+                'total_errors': len(system.error_memory),
+                'total_logs': len(system.system_logs)
             })
         
         @app.route('/api/iterations')
@@ -2274,8 +2302,12 @@ if __name__ == "__main__":
                 iter_data.append({
                     'iteration': iteration,
                     'start_time': data.get('start_time', datetime.now()).isoformat(),
+                    'end_time': data.get('end_time', datetime.now()).isoformat() if data.get('end_time') else None,
                     'completed': data.get('completed', False),
-                    'results': data.get('results', {})
+                    'results': data.get('results', {}),
+                    'phases': data.get('phases', []),
+                    'agents_created': data.get('agents_created', []),
+                    'performance_metrics': data.get('performance_metrics', {})
                 })
             return jsonify({
                 'iterations': sorted(iter_data, key=lambda x: x['iteration'], reverse=True)[:50],
@@ -2290,11 +2322,13 @@ if __name__ == "__main__":
                     'id': champ.get('id'),
                     'created_at': champ.get('created_at', datetime.now()).isoformat(),
                     'performance': champ.get('performance', {}),
+                    'project_dir': champ.get('project_dir'),
                     'status': 'active'
                 })
             return jsonify({
                 'champions': champ_list,
-                'total_champions': len(champ_list)
+                'total_champions': len(champ_list),
+                'active_champions': len([c for c in champ_list if c['status'] == 'active'])
             })
         
         @app.route('/api/heartbeat')
@@ -2309,31 +2343,173 @@ if __name__ == "__main__":
         
         @app.route('/api/errors')
         def errors():
+            """Return detailed error log with full tracebacks"""
+            # Get query parameters for filtering
+            limit = request.args.get('limit', 50, type=int)
+            since = request.args.get('since', None)
+            
+            error_list = []
+            for err in system.error_memory[-limit:]:
+                error_entry = {
+                    'timestamp': err.get('timestamp', datetime.now().isoformat()),
+                    'iteration': err.get('iteration', 0),
+                    'error': err.get('error', 'Unknown error'),
+                    'traceback': err.get('traceback', 'No traceback available'),
+                    'consecutive_failures': err.get('consecutive_failures', 0),
+                    'error_type': type(err.get('error', '')).__name__
+                }
+                error_list.append(error_entry)
+            
             return jsonify({
-                'errors': system.error_memory[-50:],  # Last 50 errors
-                'total_errors': len(system.error_memory)
+                'errors': error_list,
+                'total_errors': len(system.error_memory),
+                'errors_last_hour': len([e for e in system.error_memory if (datetime.now() - datetime.fromisoformat(e.get('timestamp', datetime.now().isoformat()))).total_seconds() < 3600]),
+                'recovery_rate': 1.0 - (len([e for e in system.error_memory[-10:] if e.get('consecutive_failures', 0) > 0]) / max(len(system.error_memory[-10:]), 1))
+            })
+        
+        @app.route('/api/logs')
+        def logs():
+            """Return system logs with filtering"""
+            # Get query parameters
+            limit = request.args.get('limit', 100, type=int)
+            level = request.args.get('level', None)
+            component = request.args.get('component', None)
+            since = request.args.get('since', None)
+            
+            # Filter logs
+            filtered_logs = system.system_logs
+            
+            if level:
+                filtered_logs = [log for log in filtered_logs if log['level'] == level.upper()]
+            
+            if component:
+                filtered_logs = [log for log in filtered_logs if log['component'] == component]
+            
+            if since:
+                try:
+                    since_dt = datetime.fromisoformat(since)
+                    filtered_logs = [log for log in filtered_logs if datetime.fromisoformat(log['timestamp']) > since_dt]
+                except:
+                    pass
+            
+            return jsonify({
+                'logs': filtered_logs[-limit:],
+                'total': len(system.system_logs),
+                'filtered': len(filtered_logs)
+            })
+        
+        @app.route('/api/agents')
+        def agents():
+            """Return agent activity and suggestions"""
+            agent_list = []
+            
+            # Get agent activities from monitoring agent
+            for activity in system.monitoring_agent.agent_activities[-50:]:
+                agent_list.append({
+                    'timestamp': activity.get('timestamp', datetime.now()).isoformat(),
+                    'agent': activity.get('agent', 'unknown'),
+                    'action': activity.get('action', 'unknown'),
+                    'details': activity.get('details', {})
+                })
+            
+            return jsonify({
+                'agents': agent_list,
+                'total_activities': len(system.monitoring_agent.agent_activities)
+            })
+        
+        @app.route('/api/metrics')
+        def metrics():
+            """Return performance metrics"""
+            return jsonify({
+                'performance_metrics': system.performance_metrics,
+                'strategy_threshold_memory': system.strategy_threshold_memory,
+                'current_iteration': system.iteration_count,
+                'champions': len(system.active_champions)
+            })
+        
+        @app.route('/api/checkpoints')
+        def checkpoints():
+            """Return checkpoint information"""
+            checkpoint_list = []
+            
+            # List checkpoint files
+            checkpoint_dir = system.checkpoint_manager.checkpoint_dir
+            if checkpoint_dir.exists():
+                for cp_file in sorted(checkpoint_dir.glob("checkpoint_*.pkl")):
+                    checkpoint_list.append({
+                        'file': cp_file.name,
+                        'size_bytes': cp_file.stat().st_size,
+                        'modified': datetime.fromtimestamp(cp_file.stat().st_mtime).isoformat()
+                    })
+            
+            return jsonify({
+                'checkpoints': checkpoint_list[-10:],  # Last 10
+                'total_checkpoints': len(checkpoint_list)
             })
         
         @app.route('/')
         def dashboard():
             return f"""
             <html>
-            <head><title>E17 Trading System Monitor</title></head>
-            <body style="font-family: Arial; padding: 20px;">
+            <head>
+                <title>E17 Trading System Monitor</title>
+                <style>
+                    body {{ font-family: Arial; padding: 20px; background: #1a1a1a; color: #fff; }}
+                    h1 {{ color: #00ff88; }}
+                    .endpoint {{ background: #2a2a2a; padding: 10px; margin: 5px 0; border-radius: 5px; }}
+                    a {{ color: #00aaff; text-decoration: none; }}
+                    a:hover {{ text-decoration: underline; }}
+                    .status {{ color: #00ff88; font-weight: bold; }}
+                </style>
+            </head>
+            <body>
                 <h1>🤖 E17 Trading System Monitor</h1>
-                <h2>System Status: Running ✅</h2>
+                <h2 class="status">System Status: Running ✅</h2>
                 <p><strong>Iteration:</strong> {system.iteration_count}</p>
                 <p><strong>Champions:</strong> {len(system.active_champions)}</p>
                 <p><strong>Uptime:</strong> {int(time.time() - system.heartbeat_monitor.stats['uptime_start'])}s</p>
-                <h3>API Endpoints:</h3>
-                <ul>
-                    <li><a href="/api/status">/api/status</a> - System health</li>
-                    <li><a href="/api/iterations">/api/iterations</a> - Iteration history</li>
-                    <li><a href="/api/champions">/api/champions</a> - Champion strategies</li>
-                    <li><a href="/api/heartbeat">/api/heartbeat</a> - Heartbeat status</li>
-                    <li><a href="/api/errors">/api/errors</a> - Error log</li>
-                </ul>
-                <p><em>Refresh page for updates or use API endpoints for real-time data</em></p>
+                <p><strong>Total Errors:</strong> {len(system.error_memory)}</p>
+                <p><strong>Total Logs:</strong> {len(system.system_logs)}</p>
+                
+                <h3>📡 Available API Endpoints:</h3>
+                <div class="endpoint">
+                    <strong><a href="/api/status">/api/status</a></strong>
+                    - System health and metrics
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/iterations">/api/iterations</a></strong>
+                    - Iteration history with details
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/champions">/api/champions</a></strong>
+                    - Champion strategies
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/heartbeat">/api/heartbeat</a></strong>
+                    - Heartbeat status
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/errors">/api/errors</a></strong>
+                    - Error log with tracebacks
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/logs">/api/logs</a></strong>
+                    - System logs (supports ?level=ERROR&component=REASONER&limit=100)
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/agents">/api/agents</a></strong>
+                    - Agent activity and suggestions
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/metrics">/api/metrics</a></strong>
+                    - Performance metrics
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/checkpoints">/api/checkpoints</a></strong>
+                    - Checkpoint management
+                </div>
+                
+                <p><em>🔄 Auto-refresh or call endpoints for real-time data</em></p>
             </body>
             </html>
             """
@@ -2341,6 +2517,7 @@ if __name__ == "__main__":
         def run_flask():
             try:
                 monitoring_logger.info("🌐 Flask server starting on 0.0.0.0:8000")
+                monitoring_logger.info("📡 All endpoints available: /api/status, /api/logs, /api/errors, /api/agents, etc.")
                 app.run(host='0.0.0.0', port=8000, debug=False, threaded=True, use_reloader=False)
             except Exception as e:
                 monitoring_logger.error(f"❌ Flask server error: {e}")
@@ -2349,7 +2526,7 @@ if __name__ == "__main__":
         flask_thread = threading.Thread(target=run_flask, daemon=True, name="FlaskAPI")
         flask_thread.start()
         self.monitoring_api_started = True
-        monitoring_logger.info("✅ Flask monitoring API started successfully")
+        monitoring_logger.info("✅ Flask monitoring API started successfully with ALL endpoints")
     
     def _start_monitoring_api(self):
         """Start monitoring API in background thread"""
