@@ -1994,54 +1994,67 @@ if __name__ == "__main__":
         monitoring_logger.info(f"✅ Monitoring API generated: {api_path}")
         return api_path
     
-    def _start_monitoring_api(self):
-        """Start monitoring API in background thread"""
+    def _start_monitoring_api_early(self):
+        """Start monitoring API immediately (before first champion)"""
         if self.monitoring_api_started:
             return
         
         monitoring_logger = logging.getLogger("Bot.MONITORING")
-        monitoring_logger.info("🚀 Starting monitoring API server...")
+        monitoring_logger.info("🚀 Starting monitoring API server (early start)...")
         
         try:
-            # Generate API if not exists
-            if self.current_project_dir:
-                api_path = os.path.join(self.current_project_dir, "monitoring_api.py")
-                if not os.path.exists(api_path):
-                    self._generate_monitoring_api(self.current_project_dir)
-                
-                def run_api():
-                    """Run uvicorn server"""
-                    try:
-                        # Import the API module
-                        import sys
-                        sys.path.insert(0, self.current_project_dir)
-                        import monitoring_api
-                        
-                        # Inject monitoring agent
-                        monitoring_api.set_monitoring_agent(self.monitoring_agent)
-                        
-                        # Start uvicorn
-                        import uvicorn
-                        uvicorn.run(
-                            monitoring_api.app,
-                            host="0.0.0.0",
-                            port=8000,
-                            log_level="warning"  # Reduce noise
-                        )
-                    except Exception as e:
-                        monitoring_logger.error(f"API server error: {e}")
-                
-                # Start in background thread
-                api_thread = threading.Thread(target=run_api, daemon=True)
-                api_thread.start()
-                
-                self.monitoring_api_started = True
-                monitoring_logger.info("✅ Monitoring API started on http://localhost:8000")
-                monitoring_logger.info("📊 Dashboard: http://localhost:8000/api/dashboard")
-                monitoring_logger.info("🔌 WebSocket: ws://localhost:8000/ws/logs")
-                
+            # Create temporary directory for API if no project dir yet
+            import tempfile
+            if not self.current_project_dir:
+                temp_dir = tempfile.mkdtemp(prefix="monitoring_")
+                self.current_project_dir = temp_dir
+            
+            api_path = os.path.join(self.current_project_dir, "monitoring_api.py")
+            if not os.path.exists(api_path):
+                self._generate_monitoring_api(self.current_project_dir)
+            
+            def run_api():
+                """Run uvicorn server"""
+                try:
+                    # Import the API module
+                    import sys
+                    sys.path.insert(0, self.current_project_dir)
+                    import monitoring_api
+                    
+                    # Inject monitoring agent
+                    monitoring_api.set_monitoring_agent(self.monitoring_agent)
+                    
+                    # Start uvicorn
+                    import uvicorn
+                    uvicorn.run(
+                        monitoring_api.app,
+                        host="0.0.0.0",
+                        port=8000,
+                        log_level="warning"  # Reduce noise
+                    )
+                except Exception as e:
+                    monitoring_logger.error(f"API server error: {e}")
+            
+            # Start in background thread
+            api_thread = threading.Thread(target=run_api, daemon=True)
+            api_thread.start()
+            
+            # Give it a moment to start
+            time.sleep(2)
+            
+            self.monitoring_api_started = True
+            monitoring_logger.info("✅ Monitoring API started on http://localhost:8000")
+            monitoring_logger.info("📊 Dashboard: http://localhost:8000/api/dashboard")
+            monitoring_logger.info("🔌 WebSocket: ws://localhost:8000/ws/logs")
+            
         except Exception as e:
             monitoring_logger.error(f"Failed to start monitoring API: {e}")
+    
+    def _start_monitoring_api(self):
+        """Start monitoring API in background thread (legacy method for champion start)"""
+        # Just call the early start method if not already started
+        if not self.monitoring_api_started:
+            self._start_monitoring_api_early()
 
     # =========================================================================================
     # 🔄 CONTINUOUS ALPHA HUNTING LOOP (ENHANCED)
@@ -2052,6 +2065,15 @@ if __name__ == "__main__":
 
         alpha_hunter_logger = logging.getLogger("Bot.ALPHA-HUNTER")
         alpha_hunter_logger.info("🚀 STARTING_CONTINUOUS_ALPHA_HUNTING")
+        
+        # 🚀 START MONITORING API IMMEDIATELY (don't wait for champion)
+        print("\n" + "=" * 80)
+        print("📊 STARTING MONITORING API...")
+        print("=" * 80)
+        self._start_monitoring_api_early()
+        print("✅ Monitoring API running on http://localhost:8000")
+        print("📊 Dashboard: http://localhost:8000/api/dashboard")
+        print("=" * 80 + "\n")
 
         iteration = 0
 
@@ -2059,6 +2081,11 @@ if __name__ == "__main__":
             iteration += 1
             self.iteration_count = iteration
 
+            # Enhanced on-screen logging
+            print("\n" + "━" * 80)
+            print(f"🔄 ITERATION {iteration} STARTED")
+            print("━" * 80)
+            
             alpha_hunter_logger.info(f"🔄 CONTINUOUS-ALPHA Iteration {iteration}")
             self._log_phase_progress("alpha_hunting", iteration, "start", f"Iteration {iteration}")
 
@@ -2067,13 +2094,17 @@ if __name__ == "__main__":
                 self.monitoring_agent.capture_iteration_start(iteration, {})
                 
                 # Enhanced reasoning with agent ecosystem
+                print(f"🧠 [Phase 1/5] REASONING - Building execution plan...")
                 self._log_phase_progress("reasoner", iteration, "info", "Building plan with agents")
                 plan = self.super_reasoner_phase()
                 
                 # Capture plan in monitoring
                 self.monitoring_agent.capture_iteration_start(iteration, plan)
+                files_planned = [f.get('path') for f in plan.get('files', []) if isinstance(f, dict)]
+                print(f"   ✅ Plan complete: {len(files_planned)} files to generate")
 
                 # Enhanced coding with agent generation
+                print(f"🛠️  [Phase 2/5] CODING - Generating infrastructure + agents...")
                 self._log_phase_progress("coder", iteration, "info", "Generating code + agents")
                 self.monitoring_agent.capture_phase_start("expert_coder", {"iteration": iteration})
                 code_files = self.expert_coder_phase(plan)
@@ -2085,29 +2116,43 @@ if __name__ == "__main__":
                     "count": len(code_files),
                     "files": list(code_files.keys())
                 })
+                print(f"   ✅ Generated {len(code_files)} files: {', '.join(list(code_files.keys())[:3])}...")
 
                 # Enhanced validation with alpha focus
+                print(f"🔍 [Phase 3/5] VALIDATION - Testing alpha sophistication...")
                 self._log_phase_progress("enforcer", iteration, "info", "Alpha validation")
                 viable = self.min_trades_enforcer.enforce_live_strategy_alpha(plan, project_dir)
                 if not viable:
+                    print(f"   ❌ Strategy not viable - restarting iteration")
                     self._log_phase_progress("enforcer", iteration, "warning", "Strategy not viable")
                     self.monitoring_agent.capture_iteration_end(iteration, {"status": "not_viable"})
                     continue
+                print(f"   ✅ Validation passed")
 
                 # Runtime validation
+                print(f"⚙️  [Phase 4/5] RUNTIME - Testing execution...")
                 self._log_phase_progress("runtime", iteration, "info", "Runtime testing")
                 startup_ok = self._runtime_auto_fix_loop(project_dir)
                 if not startup_ok:
+                    print(f"   ❌ Startup failed - restarting iteration")
                     self._log_phase_progress("runtime", iteration, "error", "Startup failed")
                     self.monitoring_agent.capture_iteration_end(iteration, {"status": "startup_failed"})
                     continue
+                print(f"   ✅ Runtime tests passed")
 
                 # Performance testing
+                print(f"📈 [Phase 5/5] PERFORMANCE - Running paper trading...")
                 self._log_phase_progress("performance", iteration, "info", "Paper trading")
                 performance_data = self.run_real_paper_trading(project_dir)
                 
                 # Capture strategy performance
                 self.monitoring_agent.capture_strategy_performance(iteration, performance_data)
+                
+                # Display performance metrics
+                trades = performance_data.get('total_trades', 0)
+                win_rate = performance_data.get('win_rate', 0)
+                profit_factor = performance_data.get('profit_factor', 0)
+                print(f"   📊 Results: {trades} trades, WR={win_rate:.2%}, PF={profit_factor:.2f}")
 
                 # 🏆 CHAMPION PROMOTION & CONTINUOUS TRADING
                 if self._is_champion_material(performance_data):
@@ -2121,6 +2166,10 @@ if __name__ == "__main__":
                         "created_at": datetime.now()
                     })
 
+                    print(f"\n🏆 CHAMPION PROMOTED: {champion_id}")
+                    print(f"   📊 Performance: {trades} trades, WR={win_rate:.2%}, PF={profit_factor:.2f}")
+                    print(f"   🎯 Starting continuous trading...\n")
+                    
                     alpha_hunter_logger.info(f"🏆 NEW_CHAMPION_PROMOTED: {champion_id}")
                     self._log_phase_progress("champion", iteration, "success", f"New champion: {champion_id}")
 
@@ -2134,12 +2183,15 @@ if __name__ == "__main__":
                         "performance": performance_data
                     })
                 else:
+                    print(f"   ℹ️  No champion this iteration - continuing hunt...")
                     self.monitoring_agent.capture_iteration_end(iteration, {
                         "status": "completed_no_champion",
                         "performance": performance_data
                     })
 
                 # 🧠 START NEW ALPHA HUNTING LOOP IMMEDIATELY
+                print(f"━" * 80)
+                print(f"✅ ITERATION {iteration} COMPLETE\n")
                 alpha_hunter_logger.info("🧠 LAUNCHING_NEW_ALPHA_HUNTING_LOOP")
                 self._log_phase_progress("alpha_hunting", iteration, "info", "Launching next hunt")
                 # Loop continues automatically
@@ -2147,6 +2199,8 @@ if __name__ == "__main__":
                 self._log_phase_progress("alpha_hunting", iteration, "complete", f"Completed iteration {iteration}")
 
             except Exception as e:
+                print(f"\n❌ ITERATION {iteration} FAILED: {str(e)[:100]}")
+                print(f"━" * 80 + "\n")
                 error_logger = logging.getLogger("Bot.ERROR")
                 error_logger.error(f"💥 ALPHA_HUNTING_ITERATION_FAILED {iteration}: {e}")
                 self._log_phase_progress("alpha_hunting", iteration, "error", f"Failed: {str(e)[:100]}")
