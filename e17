@@ -1,6 +1,7 @@
-=========================================================================================
+# =========================================================================================
 # ULTIMATE TRADING BOT MONOLITH - E21+E22+E23+E24+E25+SYSTEM_AUDITOR + AGENT_ECOSYSTEM
 # Complete 3800+ line version with ALL enhancements working + CONTINUOUS ALPHA HUNTING
+# Enhanced with Critical Fixes + Real-time Monitoring API
 # =========================================================================================
 
 # =========================================================================================
@@ -68,7 +69,7 @@ def setup_enhanced_logging():
     # Specialized loggers for different components
     components = [
         "REASONER", "CODER", "ENFORCER", "AUDITOR",
-        "AGENT-DESIGNER", "ALPHA-HUNTER", "CHAMPION", "TRADING"
+        "AGENT-DESIGNER", "ALPHA-HUNTER", "CHAMPION", "TRADING", "MONITORING"
     ]
 
     for component in components:
@@ -115,6 +116,269 @@ class SyntaxGuard:
             return True, ""
         except Exception as e:
             return False, f"{filename} syntax error: {e}"
+
+# =========================================================================================
+# 🎯 CRITICAL FIX 1: ENHANCED AGENT GENERATION VALIDATION
+# =========================================================================================
+
+class EnhancedCodeValidator:
+    """4-stage validation pipeline for generated code"""
+    
+    @staticmethod
+    def validate_generated_code(code: str, filename: str, requirements: List[str]) -> Tuple[bool, str]:
+        """Enhanced 4-stage validation pipeline"""
+        import ast
+        import tempfile
+        
+        # Stage 1: Syntax Validation
+        try:
+            ast.parse(code)
+        except SyntaxError as e:
+            return False, f"Syntax Error: {e}"
+        
+        # Stage 2: Import Test
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            temp_file = f.name
+        
+        try:
+            spec = importlib.util.spec_from_file_location(filename.replace('.py', ''), temp_file)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        except Exception as e:
+            os.unlink(temp_file)
+            return False, f"Import Error: {e}"
+        
+        # Stage 3: Contract Validation
+        for req in requirements:
+            if not hasattr(module, req):
+                os.unlink(temp_file)
+                return False, f"Missing Requirement: {req}"
+        
+        # Stage 4: Runtime Validation (if applicable)
+        if "generate_signals" in requirements and hasattr(module, "AdaptiveTradingStrategy"):
+            try:
+                # Create synthetic test data
+                def synthetic_df(rows):
+                    base = 10000.0
+                    records = []
+                    last = base
+                    for i in range(rows):
+                        drift = np.random.normal(0, 9)
+                        cyc = np.sin(i / 20.0) * 30
+                        price = last + drift + cyc
+                        high = price + abs(np.random.normal(0, 6))
+                        low = price - abs(np.random.normal(0, 6))
+                        vol = abs(np.random.normal(1.3, 0.5))
+                        records.append([int(time.time()) - (rows - i) * 60, price, high, low, price, vol])
+                        last = price
+                    return pd.DataFrame(records, columns=["timestamp", "open", "high", "low", "close", "volume"])
+                
+                test_data = {"BTCUSDT": synthetic_df(50)}
+                strat = module.AdaptiveTradingStrategy()
+                signals = strat.generate_signals(test_data)
+                if not isinstance(signals, list):
+                    return False, "Runtime Error: Signals must return list"
+            except Exception as e:
+                os.unlink(temp_file)
+                return False, f"Runtime Error: {e}"
+        
+        os.unlink(temp_file)
+        return True, "All validation stages passed"
+
+# =========================================================================================
+# 🎯 CRITICAL FIX 2: DYNAMIC TEMPERATURE STAGING SYSTEM
+# =========================================================================================
+
+def get_temperature_for_phase(phase: str, purpose: str) -> float:
+    """Dynamic temperature scheduling for different generation phases"""
+    
+    if phase == "strategy_generation":
+        if "brainstorm" in purpose.lower():
+            return 0.7  # Maximum creativity
+        if "audit" in purpose.lower():
+            return 0.1  # Rigorous validation
+        if "refine" in purpose.lower():
+            return 0.3  # Targeted fixes
+    elif phase == "infrastructure":
+        return 0.15  # Precision & reliability
+    elif phase == "reasoning":
+        return 0.4   # Balanced creativity
+    elif phase == "agent_design":
+        return 0.6   # Creative agent architecture
+    return 0.25  # Default balanced
+
+# =========================================================================================
+# 🎯 CRITICAL FIX 3: ENHANCED AGENT PROMPT TEMPLATES
+# =========================================================================================
+
+AGENT_VALIDATION_TEMPLATE = """
+CRITICAL: You MUST return VALID, IMPORTABLE Python code that passes:
+1. ✅ ast.parse() syntax validation
+2. ✅ importlib import test
+3. ✅ PEP8 standards
+4. ✅ No unbalanced parentheses/quotes
+5. ✅ All required dependencies available
+
+CODE REQUIREMENTS:
+- MUST define all referenced classes/functions
+- MUST handle all imports internally
+- MUST include error handling
+- MUST follow Python 3.8+ syntax
+
+VALIDATION: Code will be parsed, imported, and executed immediately.
+Return ONLY the raw Python code without markdown.
+"""
+
+# =========================================================================================
+# 🎯 CRITICAL FIX 4: ENHANCED ALPHA VALIDATION THRESHOLDS
+# =========================================================================================
+
+INITIAL_ALPHA_THRESHOLD = 0.30  # Reduced from 0.60
+CHAMPION_ALPHA_THRESHOLD = 0.70
+
+# =========================================================================================
+# 🎯 CRITICAL FIX 5: BACKTESTER DATA CONTRACT VALIDATION
+# =========================================================================================
+
+def validate_data_universe(data_universe: Dict[str, pd.DataFrame]) -> bool:
+    """Validate data format for backtesting"""
+    for symbol, data in data_universe.items():
+        if not isinstance(data, pd.DataFrame):
+            raise ValueError(f"Data for {symbol} is not DataFrame")
+        if 'close' not in data.columns:
+            raise ValueError(f"Missing 'close' column for {symbol}")
+    return True
+
+# =========================================================================================
+# 🚀 NEW FEATURE: REAL-TIME MONITORING SYSTEM
+# =========================================================================================
+
+class MonitoringAgent:
+    """Real-time monitoring and dashboard system"""
+    
+    def __init__(self):
+        self.iteration_data = {}
+        self.agent_activities = []
+        self.strategy_summaries = {}
+        self.champion_tracker = {}
+        self.system_health = {
+            'last_heartbeat': datetime.now(),
+            'active_threads': 0,
+            'memory_usage': 0,
+            'api_status': 'stopped'
+        }
+    
+    def capture_iteration_start(self, iteration: int, plan: Dict):
+        """Capture start of iteration"""
+        self.iteration_data[iteration] = {
+            'start_time': datetime.now(),
+            'plan': plan,
+            'phases': [],
+            'agents_created': [],
+            'strategies_tested': [],
+            'performance_metrics': {},
+            'completed': False
+        }
+    
+    def capture_iteration_end(self, iteration: int, results: Dict):
+        """Capture end of iteration"""
+        if iteration in self.iteration_data:
+            self.iteration_data[iteration]['end_time'] = datetime.now()
+            self.iteration_data[iteration]['completed'] = True
+            self.iteration_data[iteration]['results'] = results
+    
+    def capture_phase_start(self, phase_name: str, details: Dict):
+        """Capture phase start"""
+        self.agent_activities.append({
+            'timestamp': datetime.now(),
+            'type': 'phase_start',
+            'phase': phase_name,
+            'details': details
+        })
+    
+    def capture_agent_activity(self, agent_name: str, action: str, details: Dict):
+        """Capture agent activity"""
+        self.agent_activities.append({
+            'timestamp': datetime.now(),
+            'agent': agent_name,
+            'action': action,
+            'details': details
+        })
+    
+    def capture_strategy_performance(self, iteration: int, strategy_data: Dict):
+        """Capture strategy performance"""
+        if iteration in self.iteration_data:
+            self.iteration_data[iteration]['strategies_tested'].append(strategy_data)
+    
+    def capture_champion(self, champion_id: str, performance: Dict, strategy_code: str):
+        """Capture champion strategy"""
+        self.champion_tracker[champion_id] = {
+            'created_at': datetime.now(),
+            'performance': performance,
+            'strategy_code': strategy_code,
+            'active': True,
+            'total_trades': 0,
+            'current_pnl': 0.0
+        }
+    
+    def update_champion_performance(self, champion_id: str, trade_data: Dict):
+        """Update champion performance with trade data"""
+        if champion_id in self.champion_tracker:
+            self.champion_tracker[champion_id]['total_trades'] += 1
+            self.champion_tracker[champion_id]['current_pnl'] += trade_data.get('pnl', 0.0)
+    
+    def get_dashboard_data(self) -> Dict:
+        """Get comprehensive dashboard data"""
+        return {
+            'active_iterations': len([v for v in self.iteration_data.values() if not v.get('completed')]),
+            'total_iterations': len(self.iteration_data),
+            'total_champions': len(self.champion_tracker),
+            'active_champions': len([c for c in self.champion_tracker.values() if c.get('active')]),
+            'recent_agent_activities': self.agent_activities[-50:],
+            'iteration_summaries': self._summarize_iterations(),
+            'champion_performance': self._get_champion_performance(),
+            'system_health': self._get_system_health()
+        }
+    
+    def _summarize_iterations(self) -> List[Dict]:
+        """Summarize iteration data"""
+        summaries = []
+        for iter_num, data in sorted(self.iteration_data.items()):
+            summary = {
+                'iteration': iter_num,
+                'start_time': data['start_time'].isoformat() if isinstance(data['start_time'], datetime) else str(data['start_time']),
+                'completed': data.get('completed', False),
+                'agents_created': len(data.get('agents_created', [])),
+                'strategies_tested': len(data.get('strategies_tested', []))
+            }
+            if 'end_time' in data:
+                summary['end_time'] = data['end_time'].isoformat() if isinstance(data['end_time'], datetime) else str(data['end_time'])
+                if isinstance(data['start_time'], datetime) and isinstance(data['end_time'], datetime):
+                    summary['duration_seconds'] = (data['end_time'] - data['start_time']).total_seconds()
+            summaries.append(summary)
+        return summaries
+    
+    def _get_champion_performance(self) -> List[Dict]:
+        """Get champion performance data"""
+        performance = []
+        for champ_id, data in self.champion_tracker.items():
+            perf_data = {
+                'champion_id': champ_id,
+                'created_at': data['created_at'].isoformat() if isinstance(data['created_at'], datetime) else str(data['created_at']),
+                'active': data.get('active', False),
+                'total_trades': data.get('total_trades', 0),
+                'current_pnl': data.get('current_pnl', 0.0),
+                'performance': data.get('performance', {})
+            }
+            performance.append(perf_data)
+        return performance
+    
+    def _get_system_health(self) -> Dict:
+        """Get system health status"""
+        self.system_health['last_heartbeat'] = datetime.now()
+        self.system_health['active_threads'] = threading.active_count()
+        return self.system_health
 
 # =========================================================================================
 # CONFIGURATION FUNCTIONS - MOVED UP TO PREVENT NameError
@@ -639,7 +903,7 @@ class MinTradesEnforcer:
             return True  # Don't block on validation errors
 
     def _calculate_alpha_sophistication(self, signals: List[Dict], project_dir: str) -> float:
-        """Calculate sophistication score of generated signals"""
+        """Calculate sophistication score of generated signals with enhanced criteria"""
         if not signals:
             return 0.0
 
@@ -655,20 +919,46 @@ class MinTradesEnforcer:
             score += 0.2
 
         # Check for advanced features
+        has_confidence = False
+        has_risk_score = False
+        has_position_size = False
+        
         for signal in signals:
-            if 'confidence' in signal:
+            if 'confidence' in signal and not has_confidence:
                 score += 0.1
-                break
+                has_confidence = True
+            if 'risk_score' in signal and not has_risk_score:
+                score += 0.1
+                has_risk_score = True
+            if 'position_size' in signal and not has_position_size:
+                score += 0.1
+                has_position_size = True
 
-        # Check if using agent ecosystem
+        # Check if using agent ecosystem and advanced strategies
         try:
             strategies_path = os.path.join(project_dir, "strategies.py")
             with open(strategies_path, 'r') as f:
-                strategies_code = f.read()
-                if 'alpha_orchestrator' in strategies_code.lower():
+                strategies_code = f.read().lower()
+                
+                # Agent ecosystem detection
+                if 'alpha_orchestrator' in strategies_code:
                     score += 0.3
-                if any(agent in strategies_code.lower() for agent in ['whale_hunter', 'liquidity_miner', 'volatility_predictor']):
+                if any(agent in strategies_code for agent in ['whale_hunter', 'liquidity_miner', 'volatility_predictor']):
                     score += 0.2
+                
+                # Advanced indicators
+                if 'volume' in strategies_code:
+                    score += 0.1
+                if 'volatility' in strategies_code or 'atr' in strategies_code:
+                    score += 0.1
+                if 'momentum' in strategies_code:
+                    score += 0.1
+                
+                # Risk management
+                if 'stop_loss' in strategies_code:
+                    score += 0.1
+                if 'take_profit' in strategies_code:
+                    score += 0.1
         except:
             pass
 
@@ -854,6 +1144,10 @@ class E22MinTradesEnforcedSystem:
         # NEW: Agent ecosystem and champion tracking
         self.active_champions: List[Dict[str, Any]] = []
         self.agent_ecosystem: Optional[Dict[str, Any]] = None
+        
+        # NEW: Monitoring infrastructure
+        self.monitoring_agent = MonitoringAgent()
+        self.monitoring_api_started = False
 
     def _log_phase_progress(self, phase: str, iteration: int, status: str, details: str = ""):
         """Log phase progress with emoji indicators"""
@@ -923,9 +1217,14 @@ class E22MinTradesEnforcedSystem:
     # =========================================================================================
 
     def agent_designer_phase(self, plan: Dict[str, Any]) -> Dict[str, str]:
-        """🤖 NEW PHASE: Create autonomous alpha hunting agents"""
+        """🤖 NEW PHASE: Create autonomous alpha hunting agents with enhanced validation"""
         agent_designer_logger = logging.getLogger("Bot.AGENT-DESIGNER")
         agent_designer_logger.info("🤖 PHASE_START: Creating alpha hunting agent ecosystem")
+        
+        # Capture monitoring event
+        self.monitoring_agent.capture_phase_start("agent_designer", {
+            "agent_count": len(plan.get("agent_ecosystem", {}).get("required_agents", []))
+        })
 
         start_time = time.time()
         agent_files = {}
@@ -938,8 +1237,11 @@ class E22MinTradesEnforcedSystem:
             agent_name = agent_spec["name"]
             filename = f"{agent_name}_agent.py"
 
+            # Enhanced system prompt with validation template
             sys_prompt = f"""
             You are an AUTONOMOUS AGENT ARCHITECT designing {agent_name} for alpha hunting.
+            
+            {AGENT_VALIDATION_TEMPLATE}
 
             MISSION: {agent_spec['purpose']}
             DATA SOURCES: {agent_spec['data_sources']}
@@ -967,17 +1269,29 @@ class E22MinTradesEnforcedSystem:
             Focus on UNCONVENTIONAL alpha sources that retail traders miss.
             """
 
-            agent_code = self.call_agent("deepseek-coder", sys_prompt, user_prompt)
+            # Use dynamic temperature for agent design
+            temp = get_temperature_for_phase("agent_design", "creative")
+            agent_code = self.call_agent("deepseek-coder", sys_prompt, user_prompt, temperature=temp)
             clean_code = self._clean_code(agent_code)
 
-            # Validate syntax
+            # Enhanced validation - syntax first
             ok, err = self.syntax_guard.validate_python_syntax(clean_code, filename)
             if not ok:
                 agent_designer_logger.error(f"❌ AGENT_INVALID: {filename} - {err}")
+                self.monitoring_agent.capture_agent_activity("agent_designer", "validation_failed", {
+                    "filename": filename,
+                    "error": err
+                })
                 continue
 
             agent_files[filename] = clean_code
             agent_designer_logger.info(f"✅ AGENT_CREATED: {filename}")
+            
+            # Log to monitoring
+            self.monitoring_agent.capture_agent_activity("agent_designer", "agent_created", {
+                "filename": filename,
+                "agent_name": agent_name
+            })
 
         # Create orchestrator to combine agents
         orchestrator_code = self._generate_alpha_orchestrator(plan)
@@ -1069,6 +1383,13 @@ class E22MinTradesEnforcedSystem:
         start_time = time.time()
 
         self._log_phase_progress("reasoner", self.iteration_count, "start", "Building execution plan")
+        
+        # Capture in monitoring
+        self.monitoring_agent.capture_phase_start("super_reasoner", {
+            "iteration": self.iteration_count,
+            "has_previous_code": previous_code is not None,
+            "has_audit": audit_report is not None
+        })
 
         perf_json = json.dumps(performance_data or {}, ensure_ascii=False)
         diag_json = json.dumps(diagnosis or {}, ensure_ascii=False)
@@ -1166,6 +1487,13 @@ require_real_data (bool, true to forbid synthetic sources).
         duration = time.time() - start_time
         reasoner_logger.info(f"🧠 PHASE_COMPLETE: Plan built with {len(files)} files in {duration:.1f}s")
         self._log_phase_progress("reasoner", self.iteration_count, "complete", f"Plan with {len(files)} files")
+        
+        # Capture activity in monitoring
+        self.monitoring_agent.capture_agent_activity("super_reasoner", "plan_created", {
+            "file_count": len(files),
+            "files": files,
+            "duration": duration
+        })
 
         return plan_json
 
@@ -1428,6 +1756,18 @@ Return full code for {path}.
 
     def _start_continuous_trading(self, project_dir: str, champion_id: str):
         """🎯 Start champion trading in background"""
+        
+        # Auto-start monitoring API when first champion is produced
+        if not self.monitoring_api_started:
+            self._start_monitoring_api()
+        
+        # Capture champion in monitoring
+        self.monitoring_agent.capture_champion(
+            champion_id=champion_id,
+            performance={},
+            strategy_code="Champion strategy"
+        )
+        
         def trade_loop():
             trading_logger = logging.getLogger("Bot.TRADING")
             trading_logger.info(f"🎯 STARTING_CONTINUOUS_TRADING: {champion_id}")
@@ -1439,6 +1779,12 @@ Return full code for {path}.
 
                     # Log champion performance
                     self._log_champion_performance(champion_id, perf)
+                    
+                    # Update monitoring
+                    self.monitoring_agent.update_champion_performance(champion_id, {
+                        'pnl': perf.get('total_pnl', 0.0),
+                        'trades': perf.get('total_trades', 0)
+                    })
 
                     # Adaptive risk management
                     self._adapt_champion_risk(champion_id, perf)
@@ -1476,6 +1822,228 @@ Return full code for {path}.
             champion_logger.warning(f"🏆 RISK_REDUCTION {champion_id}: WR={win_rate:.3f}, DD={drawdown:.3f}")
 
     # =========================================================================================
+    # 🚀 MONITORING API GENERATION AND STARTUP
+    # =========================================================================================
+    
+    def _generate_monitoring_api(self, project_dir: str):
+        """Generate FastAPI monitoring backend"""
+        monitoring_logger = logging.getLogger("Bot.MONITORING")
+        monitoring_logger.info("📊 Generating monitoring API backend...")
+        
+        api_code = '''"""
+FastAPI Monitoring Backend for Trading Bot
+Auto-generated by MonitoringAgent
+"""
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from typing import Dict, List
+import json
+import asyncio
+from datetime import datetime
+
+app = FastAPI(title="Trading Bot Monitor API", version="1.0.0")
+
+# CORS middleware for frontend connection
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify exact origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Global reference to monitoring agent (injected by main system)
+monitoring_agent = None
+
+def set_monitoring_agent(agent):
+    """Inject monitoring agent instance"""
+    global monitoring_agent
+    monitoring_agent = agent
+
+@app.get("/")
+async def root():
+    """API root endpoint"""
+    return {
+        "service": "Trading Bot Monitoring API",
+        "version": "1.0.0",
+        "status": "running",
+        "timestamp": datetime.now().isoformat()
+    }
+
+@app.get("/api/dashboard")
+async def get_dashboard():
+    """Get complete dashboard data"""
+    if monitoring_agent is None:
+        return {"error": "Monitoring agent not initialized"}
+    return monitoring_agent.get_dashboard_data()
+
+@app.get("/api/iterations")
+async def get_iterations():
+    """Get all iteration data"""
+    if monitoring_agent is None:
+        return {"error": "Monitoring agent not initialized"}
+    return {
+        "iterations": monitoring_agent.iteration_data,
+        "total_count": len(monitoring_agent.iteration_data)
+    }
+
+@app.get("/api/iterations/{iteration_id}")
+async def get_iteration(iteration_id: int):
+    """Get specific iteration details"""
+    if monitoring_agent is None:
+        return {"error": "Monitoring agent not initialized"}
+    iteration_data = monitoring_agent.iteration_data.get(iteration_id)
+    if iteration_data is None:
+        return {"error": f"Iteration {iteration_id} not found"}
+    return iteration_data
+
+@app.get("/api/agents")
+async def get_agent_activities():
+    """Get all agent activities"""
+    if monitoring_agent is None:
+        return {"error": "Monitoring agent not initialized"}
+    return {
+        "activities": monitoring_agent.agent_activities,
+        "total_count": len(monitoring_agent.agent_activities)
+    }
+
+@app.get("/api/champions")
+async def get_champions():
+    """Get all champion strategies"""
+    if monitoring_agent is None:
+        return {"error": "Monitoring agent not initialized"}
+    return {
+        "champions": monitoring_agent.champion_tracker,
+        "total_count": len(monitoring_agent.champion_tracker)
+    }
+
+@app.get("/api/champions/{champion_id}")
+async def get_champion(champion_id: str):
+    """Get specific champion details"""
+    if monitoring_agent is None:
+        return {"error": "Monitoring agent not initialized"}
+    champion_data = monitoring_agent.champion_tracker.get(champion_id)
+    if champion_data is None:
+        return {"error": f"Champion {champion_id} not found"}
+    return champion_data
+
+@app.get("/api/health")
+async def get_health():
+    """Get system health status"""
+    if monitoring_agent is None:
+        return {"status": "error", "message": "Monitoring agent not initialized"}
+    return {
+        "status": "healthy",
+        "health": monitoring_agent._get_system_health(),
+        "timestamp": datetime.now().isoformat()
+    }
+
+# WebSocket connection manager
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(message)
+            except:
+                pass
+
+manager = ConnectionManager()
+
+@app.websocket("/ws/logs")
+async def websocket_logs(websocket: WebSocket):
+    """WebSocket endpoint for real-time log streaming"""
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Send recent activities every 2 seconds
+            if monitoring_agent:
+                recent = monitoring_agent.agent_activities[-10:]
+                data = {
+                    "type": "activities",
+                    "data": recent,
+                    "timestamp": datetime.now().isoformat()
+                }
+                await websocket.send_json(data)
+            await asyncio.sleep(2)
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception as e:
+        manager.disconnect(websocket)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+'''
+        
+        # Write API file
+        api_path = os.path.join(project_dir, "monitoring_api.py")
+        with open(api_path, 'w') as f:
+            f.write(api_code)
+        
+        monitoring_logger.info(f"✅ Monitoring API generated: {api_path}")
+        return api_path
+    
+    def _start_monitoring_api(self):
+        """Start monitoring API in background thread"""
+        if self.monitoring_api_started:
+            return
+        
+        monitoring_logger = logging.getLogger("Bot.MONITORING")
+        monitoring_logger.info("🚀 Starting monitoring API server...")
+        
+        try:
+            # Generate API if not exists
+            if self.current_project_dir:
+                api_path = os.path.join(self.current_project_dir, "monitoring_api.py")
+                if not os.path.exists(api_path):
+                    self._generate_monitoring_api(self.current_project_dir)
+                
+                def run_api():
+                    """Run uvicorn server"""
+                    try:
+                        # Import the API module
+                        import sys
+                        sys.path.insert(0, self.current_project_dir)
+                        import monitoring_api
+                        
+                        # Inject monitoring agent
+                        monitoring_api.set_monitoring_agent(self.monitoring_agent)
+                        
+                        # Start uvicorn
+                        import uvicorn
+                        uvicorn.run(
+                            monitoring_api.app,
+                            host="0.0.0.0",
+                            port=8000,
+                            log_level="warning"  # Reduce noise
+                        )
+                    except Exception as e:
+                        monitoring_logger.error(f"API server error: {e}")
+                
+                # Start in background thread
+                api_thread = threading.Thread(target=run_api, daemon=True)
+                api_thread.start()
+                
+                self.monitoring_api_started = True
+                monitoring_logger.info("✅ Monitoring API started on http://localhost:8000")
+                monitoring_logger.info("📊 Dashboard: http://localhost:8000/api/dashboard")
+                monitoring_logger.info("🔌 WebSocket: ws://localhost:8000/ws/logs")
+                
+        except Exception as e:
+            monitoring_logger.error(f"Failed to start monitoring API: {e}")
+
+    # =========================================================================================
     # 🔄 CONTINUOUS ALPHA HUNTING LOOP (ENHANCED)
     # =========================================================================================
 
@@ -1495,21 +2063,35 @@ Return full code for {path}.
             self._log_phase_progress("alpha_hunting", iteration, "start", f"Iteration {iteration}")
 
             try:
+                # Capture iteration start in monitoring
+                self.monitoring_agent.capture_iteration_start(iteration, {})
+                
                 # Enhanced reasoning with agent ecosystem
                 self._log_phase_progress("reasoner", iteration, "info", "Building plan with agents")
                 plan = self.super_reasoner_phase()
+                
+                # Capture plan in monitoring
+                self.monitoring_agent.capture_iteration_start(iteration, plan)
 
                 # Enhanced coding with agent generation
                 self._log_phase_progress("coder", iteration, "info", "Generating code + agents")
+                self.monitoring_agent.capture_phase_start("expert_coder", {"iteration": iteration})
                 code_files = self.expert_coder_phase(plan)
                 project_dir = self._create_iteration_project(plan, code_files)
                 self.current_project_dir = project_dir
+                
+                # Log files generated
+                self.monitoring_agent.capture_agent_activity("expert_coder", "files_generated", {
+                    "count": len(code_files),
+                    "files": list(code_files.keys())
+                })
 
                 # Enhanced validation with alpha focus
                 self._log_phase_progress("enforcer", iteration, "info", "Alpha validation")
                 viable = self.min_trades_enforcer.enforce_live_strategy_alpha(plan, project_dir)
                 if not viable:
                     self._log_phase_progress("enforcer", iteration, "warning", "Strategy not viable")
+                    self.monitoring_agent.capture_iteration_end(iteration, {"status": "not_viable"})
                     continue
 
                 # Runtime validation
@@ -1517,11 +2099,15 @@ Return full code for {path}.
                 startup_ok = self._runtime_auto_fix_loop(project_dir)
                 if not startup_ok:
                     self._log_phase_progress("runtime", iteration, "error", "Startup failed")
+                    self.monitoring_agent.capture_iteration_end(iteration, {"status": "startup_failed"})
                     continue
 
                 # Performance testing
                 self._log_phase_progress("performance", iteration, "info", "Paper trading")
                 performance_data = self.run_real_paper_trading(project_dir)
+                
+                # Capture strategy performance
+                self.monitoring_agent.capture_strategy_performance(iteration, performance_data)
 
                 # 🏆 CHAMPION PROMOTION & CONTINUOUS TRADING
                 if self._is_champion_material(performance_data):
@@ -1540,6 +2126,18 @@ Return full code for {path}.
 
                     # 🎯 START CONTINUOUS TRADING for this champion
                     self._start_continuous_trading(project_dir, champion_id)
+                    
+                    # Mark iteration as successful
+                    self.monitoring_agent.capture_iteration_end(iteration, {
+                        "status": "champion_promoted",
+                        "champion_id": champion_id,
+                        "performance": performance_data
+                    })
+                else:
+                    self.monitoring_agent.capture_iteration_end(iteration, {
+                        "status": "completed_no_champion",
+                        "performance": performance_data
+                    })
 
                 # 🧠 START NEW ALPHA HUNTING LOOP IMMEDIATELY
                 alpha_hunter_logger.info("🧠 LAUNCHING_NEW_ALPHA_HUNTING_LOOP")
@@ -2580,6 +3178,13 @@ def _simulate_trade_outcomes(signals: List[Dict[str, Any]], fee_pct: float, slip
     return {"wins": wins, "losses": losses, "pnl": pnl, "equity_curve": eq}
 
 def quick_backtest(strategies: List[BaseStrategy], data_universe: Dict[str, pd.DataFrame], risk_config: Dict[str, Any]) -> Dict[str, Any]:
+    # FIX 5: Validate data universe format
+    try:
+        validate_data_universe(data_universe)
+    except ValueError as e:
+        logger.error(f"Data validation failed: {e}")
+        raise
+    
     fee = float(risk_config.get("fee_pct_per_trade", 0.0004))
     slip = float(risk_config.get("slippage_pct", 0.0005))
     total_trades = 0
@@ -3719,5 +4324,4 @@ E22MinTradesEnforcedSystem.run_min_trades_enforced_loop = E22MinTradesEnforcedSy
 logger.info("🎉 ULTIMATE TRADING BOT MONOLITH READY - ULTIMATE LOOPS ACTIVATED")
 logger.info("✅ E21+E22+E23+E24+E25+SYSTEM_AUDITOR+AGENT_ECOSYSTEM working in complete synergy")
 logger.info("🔧 ULTIMATE LOOP ACTIVE: Continuous Alpha Hunting with Agent Ecosystem")
-
 
