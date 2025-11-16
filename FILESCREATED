@@ -1,0 +1,3609 @@
+(base) root@Ubuntu-2404-noble-amd64-base ~/KEEP_SAFE/v1/e22_iteration_2 #
+(base) root@Ubuntu-2404-noble-amd64-base ~/KEEP_SAFE/v1/e22_iteration_2 #
+(base) root@Ubuntu-2404-noble-amd64-base ~/KEEP_SAFE/v1/e22_iteration_2 #
+(base) root@Ubuntu-2404-noble-amd64-base ~/KEEP_SAFE/v1/e22_iteration_2 #
+(base) root@Ubuntu-2404-noble-amd64-base ~/KEEP_SAFE/v1/e22_iteration_2 #
+(base) root@Ubuntu-2404-noble-amd64-base ~/KEEP_SAFE/v1/e22_iteration_2 # echo "📄 STRATEGIES.PY:" && cat strategies.py
+echo "📄 ALPHA_ORCHESTRATOR.PY:" && cat alpha_orchestrator.py
+echo "📄 BACKTESTER.PY:" && cat backtester.py
+echo "📄 DATA_MANAGER.PY:" && cat data_manager.py
+echo "📄 FEATURES.PY:" && cat features.py
+echo "📄 STRATEGY_RUNNER.PY:" && cat strategy_runner.py
+echo "📄 EXCHANGE_CLIENT.PY:" && cat exchange_client.py
+echo "📄 HTX_FEED.PY:" && cat htx_feed.py
+echo "📄 RATE_LIMITER.PY:" && cat rate_limiter.py
+echo "📄 MAIN.PY:" && cat main.py
+echo "🤖 LIQUIDITY_MINER_AGENT.PY:" && cat liquidity_miner_agent.py
+echo "🤖 VOLATILITY_PREDICTOR_AGENT.PY:" && cat volatility_predictor_agent.py
+echo "🤖 WHALE_HUNTER_AGENT.PY:" && cat whale_hunter_agent.py
+📄 STRATEGIES.PY:
+import pandas as pd
+import numpy as np
+from typing import Dict, List, Any, Optional
+
+class BaseStrategy:
+    def __init__(self, name: str):
+        self.name = name
+
+    def calculate_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
+        raise NotImplementedError
+
+    def generate_signal(self, df: pd.DataFrame, symbol: str) -> Optional[Dict]:
+        raise NotImplementedError
+
+class AdaptiveTradingStrategy:
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.strategies = self._build_strategies()
+
+    def _build_strategies(self) -> List[BaseStrategy]:
+        return [
+            MomentumReversalStrategy("momentum_reversal"),
+            MeanReversionStrategy("mean_reversion"),
+            BreakoutStrategy("breakout")
+        ]
+
+    def _rsi(self, prices: pd.Series, period: int = 14) -> pd.Series:
+        delta = prices.diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+        return rsi
+
+    def _macd(self, prices: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> tuple:
+        ema_fast = prices.ewm(span=fast).mean()
+        ema_slow = prices.ewm(span=slow).mean()
+        macd_line = ema_fast - ema_slow
+        signal_line = macd_line.ewm(span=signal).mean()
+        histogram = macd_line - signal_line
+        return macd_line, signal_line, histogram
+
+    def _bollinger_bands(self, prices: pd.Series, period: int = 20, std_dev: float = 2.0) -> tuple:
+        sma = prices.rolling(window=period).mean()
+        std = prices.rolling(window=period).std()
+        upper_band = sma + (std * std_dev)
+        lower_band = sma - (std * std_dev)
+        return upper_band, sma, lower_band
+
+    def _sma(self, prices: pd.Series, period: int) -> pd.Series:
+        return prices.rolling(window=period).mean()
+
+    def _calculate_momentum(self, prices: pd.Series, lookback: int = 5) -> pd.Series:
+        return (prices / prices.shift(lookback) - 1) * 100
+
+    def generate_signals(self, market_data: Dict[str, pd.DataFrame]) -> List[Dict]:
+        signals = []
+
+        for symbol, df in market_data.items():
+            if len(df) < 50:
+                continue
+
+            close_prices = df['close']
+
+            # Calculate indicators
+            rsi = self._rsi(close_prices, 14)
+            macd_line, signal_line, histogram = self._macd(close_prices)
+            upper_bb, middle_bb, lower_bb = self._bollinger_bands(close_prices)
+            sma20 = self._sma(close_prices, 20)
+            sma50 = self._sma(close_prices, 50)
+            momentum = self._calculate_momentum(close_prices, 5)
+
+            current_price = close_prices.iloc[-1]
+            current_rsi = rsi.iloc[-1]
+            current_macd_hist = histogram.iloc[-1]
+
+            # Buy conditions (loose thresholds)
+            buy_conditions = 0
+            if current_rsi < 45:  # Loosened from 40
+                buy_conditions += 1
+            if current_macd_hist > -0.001:  # Very permissive MACD bullish
+                buy_conditions += 1
+            if current_price < lower_bb.iloc[-1] * 1.02:  # Near lower band
+                buy_conditions += 1
+            if sma20.iloc[-1] > sma50.iloc[-1]:
+                buy_conditions += 1
+            if momentum.iloc[-1] > -2.0:  # Very loose momentum
+                buy_conditions += 1
+
+            # Sell conditions
+            sell_conditions = 0
+            if current_rsi > 60:  # Loosened from 65
+                sell_conditions += 1
+            if current_macd_hist < 0.001:  # Very permissive MACD bearish
+                sell_conditions += 1
+            if current_price > upper_bb.iloc[-1] * 0.98:  # Near upper band
+                sell_conditions += 1
+            if current_price < sma20.iloc[-1]:
+                sell_conditions += 1
+            if momentum.iloc[-1] < 2.0:  # Very loose momentum
+                sell_conditions += 1
+
+            # Generate signals with very permissive thresholds
+            if buy_conditions >= 2:
+                signals.append({
+                    "symbol": symbol,
+                    "action": "BUY",
+                    "price": float(current_price),
+                    "strategy": "adaptive_multi_indicator"
+                })
+
+            if sell_conditions >= 1:
+                signals.append({
+                    "symbol": symbol,
+                    "action": "SELL",
+                    "price": float(current_price),
+                    "strategy": "adaptive_multi_indicator"
+                })
+
+            # Ensure at least one signal per symbol with very low confidence
+            if not any(s['symbol'] == symbol for s in signals):
+                # Generate low-confidence signal based on simple momentum
+                recent_momentum = momentum.iloc[-5:].mean()
+                if not np.isnan(recent_momentum):
+                    action = "BUY" if recent_momentum > -1.0 else "SELL"
+                    signals.append({
+                        "symbol": symbol,
+                        "action": action,
+                        "price": float(current_price),
+                        "strategy": "low_confidence_momentum"
+                    })
+
+        return signals
+
+class MomentumReversalStrategy(BaseStrategy):
+    def calculate_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        df['rsi'] = df['close'].diff().rolling(14).apply(
+            lambda x: 100 - (100 / (1 + (x[x > 0].sum() / -x[x < 0].sum()))) if x[x < 0].sum() != 0 else 50
+        )
+        df['momentum'] = (df['close'] / df['close'].shift(5) - 1) * 100
+        return df
+
+    def generate_signal(self, df: pd.DataFrame, symbol: str) -> Optional[Dict]:
+        if len(df) < 20:
+            return None
+
+        current_price = df['close'].iloc[-1]
+        rsi = df['rsi'].iloc[-1]
+        momentum = df['momentum'].iloc[-1]
+
+        if rsi < 45 and momentum > -3.0:
+            return {
+                "symbol": symbol,
+                "action": "BUY",
+                "price": float(current_price),
+                "strategy": self.name
+            }
+        elif rsi > 55 and momentum < 3.0:
+            return {
+                "symbol": symbol,
+                "action": "SELL",
+                "price": float(current_price),
+                "strategy": self.name
+            }
+        return None
+
+class MeanReversionStrategy(BaseStrategy):
+    def calculate_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        df['sma_20'] = df['close'].rolling(20).mean()
+        df['sma_50'] = df['close'].rolling(50).mean()
+        df['price_deviation'] = (df['close'] - df['sma_20']) / df['sma_20'] * 100
+        return df
+
+    def generate_signal(self, df: pd.DataFrame, symbol: str) -> Optional[Dict]:
+        if len(df) < 50:
+            return None
+
+        current_price = df['close'].iloc[-1]
+        price_deviation = df['price_deviation'].iloc[-1]
+        sma_20 = df['sma_20'].iloc[-1]
+        sma_50 = df['sma_50'].iloc[-1]
+
+        if price_deviation < -2.0 and sma_20 > sma_50:
+            return {
+                "symbol": symbol,
+                "action": "BUY",
+                "price": float(current_price),
+                "strategy": self.name
+            }
+        elif price_deviation > 2.0:
+            return {
+                "symbol": symbol,
+                "action": "SELL",
+                "price": float(current_price),
+                "strategy": self.name
+            }
+        return None
+
+class BreakoutStrategy(BaseStrategy):
+    def calculate_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        df['high_20'] = df['high'].rolling(20).max()
+        df['low_20'] = df['low'].rolling(20).min()
+        df['atr'] = df['high'].rolling(14).max() - df['low'].rolling(14).min()
+        return df
+
+    def generate_signal(self, df: pd.DataFrame, symbol: str) -> Optional[Dict]:
+        if len(df) < 20:
+            return None
+
+        current_price = df['close'].iloc[-1]
+        high_20 = df['high_20'].iloc[-1]
+        low_20 = df['low_20'].iloc[-1]
+
+        if current_price > high_20 * 0.995:
+            return {
+                "symbol": symbol,
+                "action": "BUY",
+                "price": float(current_price),
+                "strategy": self.name
+            }
+        elif current_price < low_20 * 1.005:
+            return {
+                "symbol": symbol,
+                "action": "SELL",
+                "price": float(current_price),
+                "strategy": self.name
+            }
+        return None
+
+def build_strategy_universe(config: Dict[str, Any]) -> List[BaseStrategy]:
+    strategies = []
+
+    if config.get('enable_momentum', True):
+        strategies.append(MomentumReversalStrategy("momentum_reversal"))
+
+    if config.get('enable_mean_reversion', True):
+        strategies.append(MeanReversionStrategy("mean_reversion"))
+
+    if config.get('enable_breakout', True):
+        strategies.append(BreakoutStrategy("breakout"))
+
+    return strategies📄 ALPHA_ORCHESTRATOR.PY:
+"""
+Alpha Orchestrator - Coordinates multiple specialized trading agents
+to generate composite trading signals through weighted fusion.
+"""
+
+import logging
+from typing import Dict, List, Tuple, Optional
+from dataclasses import dataclass
+import numpy as np
+from enum import Enum
+
+# Import agent modules (these would be implemented separately)
+try:
+    from whale_hunter import WhaleHunter
+except ImportError:
+    logging.warning("WhaleHunter agent not available")
+
+try:
+    from liquidity_miner import LiquidityMiner
+except ImportError:
+    logging.warning("LiquidityMiner agent not available")
+
+try:
+    from volatility_predictor import VolatilityPredictor
+except ImportError:
+    logging.warning("VolatilityPredictor agent not available")
+
+
+class SignalDirection(Enum):
+    """Trading signal directions"""
+    STRONG_BUY = 2
+    BUY = 1
+    NEUTRAL = 0
+    SELL = -1
+    STRONG_SELL = -2
+
+
+@dataclass
+class AgentPrediction:
+    """Individual agent prediction with confidence"""
+    agent_name: str
+    direction: SignalDirection
+    confidence: float  # 0.0 to 1.0
+    timestamp: float
+    metadata: Optional[Dict] = None
+
+
+@dataclass
+class CompositeSignal:
+    """Final fused signal from all agents"""
+    direction: SignalDirection
+    confidence: float
+    agent_contributions: Dict[str, float]
+    timestamp: float
+    reasoning: str
+
+
+class AlphaOrchestrator:
+    """
+    Orchestrates multiple trading agents to generate composite trading signals
+    using weighted fusion based on agent confidence and historical performance.
+    """
+
+    def __init__(self, config: Optional[Dict] = None):
+        self.config = config or {}
+        self.logger = logging.getLogger(__name__)
+
+        # Initialize agents
+        self.agents = {}
+        self.agent_weights = {}  # Dynamic weights based on performance
+        self.initialize_agents()
+
+        # Performance tracking
+        self.performance_history = {}
+        self.min_confidence_threshold = self.config.get('min_confidence', 0.3)
+
+    def initialize_agents(self) -> None:
+        """Initialize all trading agents with error handling"""
+        agent_initializers = {
+            'whale_hunter': WhaleHunter,
+            'liquidity_miner': LiquidityMiner,
+            'volatility_predictor': VolatilityPredictor
+        }
+
+        for agent_name, agent_class in agent_initializers.items():
+            try:
+                self.agents[agent_name] = agent_class(self.config)
+                self.agent_weights[agent_name] = 1.0  # Start with equal weight
+                self.performance_history[agent_name] = []
+                self.logger.info(f"Successfully initialized {agent_name}")
+            except Exception as e:
+                self.logger.error(f"Failed to initialize {agent_name}: {str(e)}")
+                self.agents[agent_name] = None
+
+        if not any(self.agents.values()):
+            raise RuntimeError("No agents could be initialized")
+
+    def collect_predictions(self, market_data: Dict) -> List[AgentPrediction]:
+        """
+        Collect predictions from all available agents
+
+        Args:
+            market_data: Dictionary containing market data needed by agents
+
+        Returns:
+            List of AgentPrediction objects
+        """
+        predictions = []
+
+        for agent_name, agent in self.agents.items():
+            if agent is None:
+                continue
+
+            try:
+                prediction = agent.predict(market_data)
+                if self._validate_prediction(prediction):
+                    predictions.append(prediction)
+                else:
+                    self.logger.warning(f"Invalid prediction from {agent_name}")
+
+            except Exception as e:
+                self.logger.error(f"Agent {agent_name} failed: {str(e)}")
+                # Reduce weight for failing agents
+                self.agent_weights[agent_name] *= 0.8
+
+        return predictions
+
+    def _validate_prediction(self, prediction: AgentPrediction) -> bool:
+        """Validate that a prediction meets minimum quality standards"""
+        return (prediction.confidence >= self.min_confidence_threshold and
+                prediction.confidence <= 1.0 and
+                isinstance(prediction.direction, SignalDirection))
+
+    def calculate_dynamic_weights(self, predictions: List[AgentPrediction]) -> Dict[str, float]:
+        """
+        Calculate dynamic weights for agents based on:
+        - Current prediction confidence
+        - Historical performance
+        - Agent reliability
+        """
+        weights = {}
+        total_weight = 0.0
+
+        for prediction in predictions:
+            agent_name = prediction.agent_name
+
+            # Base weight from confidence
+            confidence_weight = prediction.confidence
+
+            # Historical performance factor (average of last 10 predictions)
+            perf_history = self.performance_history.get(agent_name, [])
+            if perf_history:
+                perf_factor = np.mean(perf_history[-10:]) if len(perf_history) >= 10 else 0.7
+            else:
+                perf_factor = 0.7  # Default for new agents
+
+            # Reliability factor from agent weights
+            reliability_factor = self.agent_weights.get(agent_name, 0.5)
+
+            # Combined weight
+            combined_weight = confidence_weight * perf_factor * reliability_factor
+            weights[agent_name] = combined_weight
+            total_weight += combined_weight
+
+        # Normalize weights
+        if total_weight > 0:
+            weights = {k: v / total_weight for k, v in weights.items()}
+
+        return weights
+
+    def fuse_signals(self, predictions: List[AgentPrediction],
+                    weights: Dict[str, float]) -> CompositeSignal:
+        """
+        Fuse individual agent signals using weighted combination
+
+        Args:
+            predictions: List of agent predictions
+            weights: Normalized weights for each agent
+
+        Returns:
+            CompositeSignal with fused direction and confidence
+        """
+        if not predictions:
+            return self._generate_neutral_signal()
+
+        # Convert directions to numerical values for weighted average
+        direction_values = []
+        confidence_values = []
+        agent_contributions = {}
+
+        for prediction in predictions:
+            numerical_direction = prediction.direction.value
+            weighted_direction = numerical_direction * weights[prediction.agent_name]
+            weighted_confidence = prediction.confidence * weights[prediction.agent_name]
+
+            direction_values.append(weighted_direction)
+            confidence_values.append(weighted_confidence)
+            agent_contributions[prediction.agent_name] = weighted_direction
+
+        # Calculate fused direction (weighted average)
+        fused_direction_value = sum(direction_values)
+        fused_confidence = sum(confidence_values)
+
+        # Convert back to SignalDirection
+        direction = self._value_to_direction(fused_direction_value)
+
+        # Generate reasoning
+        reasoning = self._generate_reasoning(predictions, weights, direction)
+
+        return CompositeSignal(
+            direction=direction,
+            confidence=fused_confidence,
+            agent_contributions=agent_contributions,
+            timestamp=max(p.timestamp for p in predictions),
+            reasoning=reasoning
+        )
+
+    def _value_to_direction(self, value: float) -> SignalDirection:
+        """Convert numerical value to SignalDirection"""
+        if value >= 1.5:
+            return SignalDirection.STRONG_BUY
+        elif value >= 0.5:
+            return SignalDirection.BUY
+        elif value <= -1.5:
+            return SignalDirection.STRONG_SELL
+        elif value <= -0.5:
+            return SignalDirection.SELL
+        else:
+            return SignalDirection.NEUTRAL
+
+    def _generate_neutral_signal(self) -> CompositeSignal:
+        """Generate a neutral signal when no predictions are available"""
+        return CompositeSignal(
+            direction=SignalDirection.NEUTRAL,
+            confidence=0.0,
+            agent_contributions={},
+            timestamp=np.datetime64('now').astype(float),
+            reasoning="No agent predictions available"
+        )
+
+    def _generate_reasoning(self, predictions: List[AgentPrediction],
+                          weights: Dict[str, float],
+                          final_direction: SignalDirection) -> str:
+        """Generate human-readable reasoning for the composite signal"""
+        reasoning_parts = []
+
+        # Add contributions from each agent
+        for prediction in predictions:
+            weight = weights.get(prediction.agent_name, 0)
+            if weight > 0.1:  # Only mention significant contributors
+                reasoning_parts.append(
+                    f"{prediction.agent_name}: {prediction.direction.name} "
+                    f"(conf: {prediction.confidence:.2f}, weight: {weight:.2f})"
+                )
+
+        # Add consensus information
+        directions = [p.direction for p in predictions]
+        buy_signals = sum(1 for d in directions if d.value > 0)
+        sell_signals = sum(1 for d in directions if d.value < 0)
+
+        consensus = f"Consensus: {buy_signals} buy, {sell_signals} sell, {len(directions) - buy_signals - sell_signals} neutral"
+        reasoning_parts.append(consensus)
+
+        return " | ".join(reasoning_parts)
+
+    def update_performance(self, agent_name: str, was_correct: bool) -> None:
+        """
+        Update agent performance history
+
+        Args:
+            agent_name: Name of the agent
+            was_correct: Whether the agent's prediction was correct
+        """
+        if agent_name in self.performance_history:
+            score = 1.0 if was_correct else 0.0
+            self.performance_history[agent_name].append(score)
+
+            # Keep only recent history
+            if len(self.performance_history[agent_name]) > 100:
+                self.performance_history[agent_name] = self.performance_history[agent_name][-50:]
+
+    def generate_signal(self, market_data: Dict) -> CompositeSignal:
+        """
+        Main method: Generate composite trading signal from all agents
+
+        Args:
+            market_data: Market data dictionary
+
+        Returns:
+            CompositeSignal with fused prediction
+        """
+        self.logger.info("Generating composite trading signal...")
+
+        # Collect predictions from all agents
+        predictions = self.collect_predictions(market_data)
+
+        if not predictions:
+            self.logger.warning("No valid predictions collected")
+            return self._generate_neutral_signal()
+
+        # Calculate dynamic weights
+        weights = self.calculate_dynamic_weights(predictions)
+
+        # Fuse signals
+        composite_signal = self.fuse_signals(predictions, weights)
+
+        self.logger.info(f"Generated signal: {composite_signal.direction.name} "
+                        f"(confidence: {composite_signal.confidence:.2f})")
+
+        return composite_signal
+
+    def get_agent_status(self) -> Dict:
+        """Get status of all agents"""
+        status = {}
+        for agent_name, agent in self.agents.items():
+            status[agent_name] = {
+                'active': agent is not None,
+                'weight': self.agent_weights.get(agent_name, 0.0),
+                'performance': np.mean(self.performance_history.get(agent_name, [0.5])) if self.performance_history.get(agent_name) else 0.5
+            }
+        return status
+
+
+# Example usage
+if __name__ == "__main__":
+    # Configure logging
+    logging.basicConfig(level=logging.INFO)
+
+    # Initialize orchestrator
+    orchestrator = AlphaOrchestrator({
+        'min_confidence': 0.4,
+        'whale_hunter': {'lookback_period': 24},
+        'liquidity_miner': {'depth_levels': 5},
+        'volatility_predictor': {'prediction_horizon': 1}
+    })
+
+    # Example market data
+    market_data = {
+        'price': 45000.0,
+        'volume': 1000000,
+        'order_book': {...},
+        'recent_trades': [...]
+    }
+
+    # Generate signal
+    signal = orchestrator.generate_signal(market_data)
+    print(f"Final Signal: {signal.direction.name}")
+    print(f"Confidence: {signal.confidence:.2f}")
+    print(f"Reasoning: {signal.reasoning}")
+    print(f"Agent Contributions: {signal.agent_contributions}")
+```
+
+This alpha orchestrator provides:
+
+1. **Robust Agent Management**: Initializes all three agents with graceful error handling
+2. **Predictive Signal Collection**: Gathers predictions from each agent with validation
+3. **Weighted Fusion**: Combines signals using dynamic weights based on confidence and historical performance
+4. **Intelligent Signal Generation**: Converts numerical predictions to clear BUY/SELL signals
+5. **Performance Tracking**: Continuously updates agent weights based on prediction accuracy
+6. **Comprehensive Logging**: Detailed reasoning and contribution tracking
+
+The system is designed to be extensible - you can easily add more agents by including them in the initialization dictionary and they will automatically be incorporated into the fusion logic.📄 BACKTESTER.PY:
+import numpy as np
+import pandas as pd
+from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass
+import logging
+
+@dataclass
+class Position:
+    symbol: str
+    side: str  # 'long' or 'short'
+    entry_price: float
+    size: float
+    stop_loss: float
+    take_profit: float
+    entry_bar: int
+    atr: float
+
+class Backtester:
+    def __init__(self, initial_capital: float = 100000.0):
+        self.initial_capital = initial_capital
+        self.positions = {}
+        self.trades = []
+        self.equity_curve = []
+        self.current_equity = initial_capital
+        self.peak_equity = initial_capital
+        self.max_drawdown = 0.0
+
+    def calculate_atr(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:
+        """Calculate Average True Range (ATR)"""
+        tr1 = high - low
+        tr2 = abs(high - close.shift(1))
+        tr3 = abs(low - close.shift(1))
+        tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+        atr = tr.rolling(window=period).mean()
+        return atr
+
+    def calculate_position_size(self, capital: float, entry_price: float, atr: float,
+                              risk_per_trade: float = 0.02) -> float:
+        """Calculate position size based on risk management"""
+        if atr == 0 or entry_price == 0:
+            return 0
+        risk_amount = capital * risk_per_trade
+        position_size = risk_amount / (atr * entry_price)
+        return position_size
+
+    def apply_fees_and_slippage(self, price: float, size: float, is_buy: bool,
+                              fee_pct: float, slippage_pct: float) -> float:
+        """Apply trading fees and slippage to execution price"""
+        slippage = price * slippage_pct
+        if is_buy:
+            execution_price = price + slippage
+        else:
+            execution_price = price - slippage
+
+        # Apply fee (both sides)
+        fee = execution_price * size * fee_pct
+        return execution_price, fee
+
+    def check_exit_conditions(self, symbol: str, current_bar: Dict, position: Position) -> Optional[Dict]:
+        """Check if position should be exited due to SL/TP"""
+        current_high = current_bar['high']
+        current_low = current_bar['low']
+        current_close = current_bar['close']
+
+        if position.side == 'long':
+            # Check stop loss (low touches or goes below SL)
+            if current_low <= position.stop_loss:
+                exit_price = min(position.stop_loss, current_low)
+                return {'type': 'stop_loss', 'price': exit_price}
+
+            # Check take profit (high touches or goes above TP)
+            if current_high >= position.take_profit:
+                exit_price = max(position.take_profit, current_high)
+                return {'type': 'take_profit', 'price': exit_price}
+
+        elif position.side == 'short':
+            # Check stop loss (high touches or goes above SL)
+            if current_high >= position.stop_loss:
+                exit_price = max(position.stop_loss, current_high)
+                return {'type': 'stop_loss', 'price': exit_price}
+
+            # Check take profit (low touches or goes below TP)
+            if current_low <= position.take_profit:
+                exit_price = min(position.take_profit, current_low)
+                return {'type': 'take_profit', 'price': exit_price}
+
+        return None
+
+    def close_position(self, symbol: str, exit_bar: Dict, exit_reason: str, exit_price: float,
+                     fee_pct: float, slippage_pct: float) -> float:
+        """Close a position and calculate PnL"""
+        if symbol not in self.positions:
+            return 0.0
+
+        position = self.positions[symbol]
+
+        # Apply fees and slippage on exit
+        exit_price_with_costs, exit_fee = self.apply_fees_and_slippage(
+            exit_price, position.size, position.side == 'short', fee_pct, slippage_pct
+        )
+
+        # Calculate PnL
+        if position.side == 'long':
+            pnl = (exit_price_with_costs - position.entry_price) * position.size
+        else:  # short
+            pnl = (position.entry_price - exit_price_with_costs) * position.size
+
+        # Subtract fees (entry fee was already accounted for in entry price)
+        total_fee = exit_fee
+        net_pnl = pnl - total_fee
+
+        # Record trade
+        trade = {
+            'symbol': symbol,
+            'side': position.side,
+            'entry_price': position.entry_price,
+            'exit_price': exit_price_with_costs,
+            'size': position.size,
+            'pnl': net_pnl,
+            'return_pct': (net_pnl / (position.entry_price * position.size)) * 100,
+            'entry_bar': position.entry_bar,
+            'exit_bar': exit_bar['bar_index'],
+            'exit_reason': exit_reason,
+            'duration': exit_bar['bar_index'] - position.entry_bar
+        }
+        self.trades.append(trade)
+
+        # Update equity
+        self.current_equity += net_pnl
+        del self.positions[symbol]
+
+        return net_pnl
+
+    def backtest(self, strategies: Dict, data_universe: Dict, risk_config: Dict) -> Dict:
+        """
+        Main backtesting function
+
+        Args:
+            strategies: Dict of strategy objects with generate_signals method
+            data_universe: Dict of DataFrames with OHLCV data for each symbol
+            risk_config: Dict with risk parameters including:
+                - atr_period: int
+                - atr_multiplier_sl: float
+                - atr_multiplier_tp: float
+                - risk_per_trade: float
+                - fee_pct_per_trade: float
+                - slippage_pct: float
+
+        Returns:
+            Dict with backtest results and metrics
+        """
+        # Initialize
+        self.positions = {}
+        self.trades = []
+        self.equity_curve = []
+        self.current_equity = self.initial_capital
+        self.peak_equity = self.initial_capital
+        self.max_drawdown = 0.0
+
+        # Extract risk parameters
+        atr_period = risk_config.get('atr_period', 14)
+        atr_multiplier_sl = risk_config.get('atr_multiplier_sl', 2.0)
+        atr_multiplier_tp = risk_config.get('atr_multiplier_tp', 3.0)
+        risk_per_trade = risk_config.get('risk_per_trade', 0.02)
+        fee_pct = risk_config.get('fee_pct_per_trade', 0.001)  # 0.1%
+        slippage_pct = risk_config.get('slippage_pct', 0.0005)  # 0.05%
+
+        # Prepare data and calculate ATR for each symbol
+        prepared_data = {}
+        for symbol, data in data_universe.items():
+            df = data.copy()
+            df['atr'] = self.calculate_atr(df['high'], df['low'], df['close'], atr_period)
+            prepared_data[symbol] = df
+
+        # Get all unique timestamps across all symbols
+        all_timestamps = set()
+        for symbol_data in prepared_data.values():
+            all_timestamps.update(symbol_data.index)
+        all_timestamps = sorted(list(all_timestamps))
+
+        # Bar-by-bar simulation
+        for bar_index, timestamp in enumerate(all_timestamps):
+            current_equity_before_bar = self.current_equity
+
+            # Check for position exits first
+            symbols_to_close = []
+            for symbol, position in list(self.positions.items()):
+                if symbol in prepared_data and timestamp in prepared_data[symbol].index:
+                    current_bar = prepared_data[symbol].loc[timestamp]
+                    current_bar_dict = {
+                        'high': current_bar['high'],
+                        'low': current_bar['low'],
+                        'close': current_bar['close'],
+                        'bar_index': bar_index
+                    }
+
+                    exit_condition = self.check_exit_conditions(symbol, current_bar_dict, position)
+                    if exit_condition:
+                        self.close_position(
+                            symbol, current_bar_dict, exit_condition['type'],
+                            exit_condition['price'], fee_pct, slippage_pct
+                        )
+                        symbols_to_close.append(symbol)
+
+            # Remove closed positions
+            for symbol in symbols_to_close:
+                if symbol in self.positions:
+                    del self.positions[symbol]
+
+            # Check for new entries
+            for symbol, strategy in strategies.items():
+                if (symbol in prepared_data and timestamp in prepared_data[symbol].index and
+                    symbol not in self.positions):
+
+                    current_bar = prepared_data[symbol].loc[timestamp]
+                    signal = strategy.generate_signals(prepared_data[symbol], current_bar.name)
+
+                    if signal != 0:  # 1 for long, -1 for short
+                        side = 'long' if signal > 0 else 'short'
+                        entry_price = current_bar['close']
+                        atr_value = current_bar['atr']
+
+                        if not np.isnan(atr_value) and atr_value > 0:
+                            # Calculate position size
+                            position_size = self.calculate_position_size(
+                                self.current_equity, entry_price, atr_value, risk_per_trade
+                            )
+
+                            if position_size > 0:
+                                # Calculate SL and TP based on ATR
+                                if side == 'long':
+                                    stop_loss = entry_price - (atr_value * atr_multiplier_sl)
+                                    take_profit = entry_price + (atr_value * atr_multiplier_tp)
+                                else:  # short
+                                    stop_loss = entry_price + (atr_value * atr_multiplier_sl)
+                                    take_profit = entry_price - (atr_value * atr_multiplier_tp)
+
+                                # Apply fees and slippage on entry
+                                entry_price_with_costs, entry_fee = self.apply_fees_and_slippage(
+                                    entry_price, position_size, side == 'long', fee_pct, slippage_pct
+                                )
+
+                                # Deduct entry fee from equity
+                                self.current_equity -= entry_fee
+
+                                # Open position
+                                position = Position(
+                                    symbol=symbol,
+                                    side=side,
+                                    entry_price=entry_price_with_costs,
+                                    size=position_size,
+                                    stop_loss=stop_loss,
+                                    take_profit=take_profit,
+                                    entry_bar=bar_index,
+                                    atr=atr_value
+                                )
+                                self.positions[symbol] = position
+
+            # Update equity curve and drawdown
+            self.equity_curve.append(self.current_equity)
+            if self.current_equity > self.peak_equity:
+                self.peak_equity = self.current_equity
+
+            current_drawdown = (self.peak_equity - self.current_equity) / self.peak_equity
+            if current_drawdown > self.max_drawdown:
+                self.max_drawdown = current_drawdown
+
+        # Calculate metrics
+        metrics = self.calculate_metrics()
+        return metrics
+
+    def calculate_metrics(self) -> Dict:
+        """Calculate performance metrics from completed backtest"""
+        if not self.trades:
+            return {
+                'total_trades': 0,
+                'win_rate': 0,
+                'max_drawdown': 0,
+                'profit_factor': 0,
+                'total_pnl': 0,
+                'final_equity': self.initial_capital,
+                'equity_curve': self.equity_curve,
+                'sharpe_ratio': 0,
+                'avg_trade': 0
+            }
+
+        trades_df = pd.DataFrame(self.trades)
+
+        # Basic metrics
+        total_trades = len(self.trades)
+        winning_trades = len(trades_df[trades_df['pnl'] > 0])
+        win_rate = winning_trades / total_trades if total_trades > 0 else 0
+
+        # PnL metrics
+        total_pnl = trades_df['pnl'].sum()
+        final_equity = self.initial_capital + total_pnl
+
+        # Profit factor
+        gross_profit = trades_df[trades_df['pnl'] > 0]['pnl'].sum()
+        gross_loss = abs(trades_df[trades_df['pnl'] < 0]['pnl'].sum())
+        profit_factor = gross_profit / gross_loss if gross_loss > 0 else float('inf')
+
+        # Sharpe ratio (approximate)
+        returns = trades_df['return_pct'] / 100
+        if len(returns) > 1:
+            sharpe_ratio = returns.mean() / returns.std() * np.sqrt(252)  # Annualized
+        else:
+            sharpe_ratio = 0
+
+        # Average trade
+        avg_trade = trades_df['pnl'].mean()
+
+        return {
+            'total_trades': total_trades,
+            'win_rate': win_rate,
+            'max_drawdown': self.max_drawdown,
+            'profit_factor': profit_factor,
+            'total_pnl': total_pnl,
+            'final_equity': final_equity,
+            'equity_curve': self.equity_curve,
+            'sharpe_ratio': sharpe_ratio,
+            'avg_trade': avg_trade,
+            'gross_profit': gross_profit,
+            'gross_loss': gross_loss
+        }
+
+def backtest(strategies: Dict, data_universe: Dict, risk_config: Dict) -> Dict:
+    """
+    Convenience function to run backtest
+
+    Args:
+        strategies: Dict of strategy objects with generate_signals method
+        data_universe: Dict of DataFrames with OHLCV data for each symbol
+        risk_config: Dict with risk parameters
+
+    Returns:
+        Dict with backtest metrics
+    """
+    bt = Backtester()
+    return bt.backtest(strategies, data_universe, risk_config)📄 DATA_MANAGER.PY:
+import pandas as pd
+import numpy as np
+import time
+import logging
+from typing import Dict, List, Optional
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+class RateLimiter:
+    """Synchronous token bucket rate limiter"""
+    def __init__(self, rate: float, capacity: int):
+        self.rate = rate
+        self.capacity = capacity
+        self.tokens = capacity
+        self.last_refill = time.time()
+
+    def _refill(self):
+        now = time.time()
+        elapsed = now - self.last_refill
+        new_tokens = elapsed * self.rate
+        self.tokens = min(self.capacity, self.tokens + new_tokens)
+        self.last_refill = now
+
+    def acquire(self, tokens: int = 1):
+        self._refill()
+        if self.tokens < tokens:
+            sleep_time = (tokens - self.tokens) / self.rate
+            time.sleep(sleep_time)
+            self._refill()
+        self.tokens -= tokens
+
+
+def fetch_full_history_htx(client, symbol: str, period: str, min_rows: int) -> pd.DataFrame:
+    """
+    Fetch full historical klines data with pagination and deduplication
+
+    Args:
+        client: HTX client instance
+        symbol: Trading symbol
+        period: Kline period
+        min_rows: Minimum number of rows required
+
+    Returns:
+        DataFrame with OHLCV data
+    """
+    rate_limiter = RateLimiter(rate=10, capacity=10)  # 10 requests per second
+
+    all_data = []
+    from_time = None
+    max_iterations = 100  # Safety limit
+
+    for iteration in range(max_iterations):
+        try:
+            rate_limiter.acquire()
+
+            # Fetch klines with pagination
+            klines = client.fetch_klines(
+                symbol=symbol,
+                period=period,
+                size=2000,
+                from_time=from_time
+            )
+
+            if not klines:
+                logger.info(f"No more data available for {symbol} {period}")
+                break
+
+            # Convert to DataFrame
+            df_batch = pd.DataFrame(klines, columns=[
+                'timestamp', 'open', 'high', 'low', 'close', 'volume',
+                'close_time', 'quote_asset_volume', 'number_of_trades',
+                'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'
+            ])
+
+            # Convert numeric columns
+            numeric_cols = ['open', 'high', 'low', 'close', 'volume', 'quote_asset_volume',
+                          'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume']
+            for col in numeric_cols:
+                df_batch[col] = pd.to_numeric(df_batch[col], errors='coerce')
+
+            df_batch['timestamp'] = pd.to_datetime(df_batch['timestamp'], unit='ms')
+
+            # Remove duplicates and ensure ascending order
+            df_batch = df_batch.drop_duplicates(subset=['timestamp'])
+            df_batch = df_batch.sort_values('timestamp').reset_index(drop=True)
+
+            all_data.append(df_batch)
+
+            # Check if we have enough data
+            total_rows = sum(len(df) for df in all_data)
+            if total_rows >= min_rows:
+                logger.info(f"Reached minimum rows ({min_rows}) for {symbol} {period}")
+                break
+
+            # Set next from_time for pagination (use last timestamp + 1ms)
+            if len(df_batch) > 0:
+                last_timestamp = df_batch['timestamp'].iloc[-1]
+                from_time = int(last_timestamp.timestamp() * 1000) + 1
+            else:
+                break
+
+        except Exception as e:
+            logger.error(f"Error fetching data for {symbol} {period}: {e}")
+            break
+
+    if not all_data:
+        logger.warning(f"No data fetched for {symbol} {period}")
+        return pd.DataFrame()
+
+    # Combine all batches
+    combined_df = pd.concat(all_data, ignore_index=True)
+
+    # Final deduplication and sorting
+    combined_df = combined_df.drop_duplicates(subset=['timestamp'])
+    combined_df = combined_df.sort_values('timestamp').reset_index(drop=True)
+
+    # Handle missing candles by checking for gaps
+    if len(combined_df) > 1:
+        combined_df = _detect_and_handle_gaps(combined_df, period)
+
+    logger.info(f"Final dataset for {symbol} {period}: {len(combined_df)} rows")
+
+    return combined_df
+
+
+def _detect_and_handle_gaps(df: pd.DataFrame, period: str) -> pd.DataFrame:
+    """Detect and handle gaps in the time series data"""
+    if len(df) < 2:
+        return df
+
+    # Calculate expected time difference based on period
+    period_to_minutes = {
+        '1min': 1, '5min': 5, '15min': 15, '30min': 30,
+        '60min': 60, '1h': 60, '4h': 240, '1d': 1440
+    }
+
+    expected_minutes = period_to_minutes.get(period, 60)
+    expected_ms = expected_minutes * 60 * 1000
+
+    # Calculate time differences
+    df = df.sort_values('timestamp')
+    timestamps = df['timestamp'].values
+    differences = np.diff(timestamps.astype(np.int64) // 10**6)  # Convert to ms
+
+    # Find gaps larger than expected
+    gap_threshold = expected_ms * 1.5  # 50% tolerance
+    gaps = differences > gap_threshold
+
+    if np.any(gaps):
+        gap_indices = np.where(gaps)[0]
+        logger.warning(f"Found {len(gap_indices)} gaps in {period} data")
+
+        # Log gap information
+        for idx in gap_indices:
+            gap_start = timestamps[idx]
+            gap_end = timestamps[idx + 1]
+            gap_duration = differences[idx] / (1000 * 60)  # Convert to minutes
+            logger.info(f"Gap from {gap_start} to {gap_end}: {gap_duration:.1f} minutes")
+
+    return df
+
+
+def build_data_universe(client, symbols: List[str], periods: List[str], min_rows: int) -> Dict[str, Dict[str, pd.DataFrame]]:
+    """
+    Build a complete data universe for multiple symbols and periods
+
+    Args:
+        client: HTX client instance
+        symbols: List of trading symbols
+        periods: List of kline periods
+        min_rows: Minimum number of rows required per symbol/period
+
+    Returns:
+        Nested dictionary: {symbol: {period: DataFrame}}
+    """
+    data_universe = {}
+
+    for symbol in symbols:
+        symbol_data = {}
+        logger.info(f"Processing symbol: {symbol}")
+
+        for period in periods:
+            logger.info(f"  Fetching period: {period}")
+            try:
+                df = fetch_full_history_htx(client, symbol, period, min_rows)
+
+                if len(df) >= min_rows:
+                    symbol_data[period] = df
+                    logger.info(f"    Success: {len(df)} rows")
+                else:
+                    logger.warning(f"    Insufficient data: {len(df)} rows (min: {min_rows})")
+                    symbol_data[period] = df  # Still include what we have
+
+            except Exception as e:
+                logger.error(f"    Error fetching {symbol} {period}: {e}")
+                symbol_data[period] = pd.DataFrame()
+
+        data_universe[symbol] = symbol_data
+
+    # Log summary
+    total_symbols = len(symbols)
+    total_periods = len(periods)
+    successful_combinations = sum(
+        1 for symbol_data in data_universe.values()
+        for df in symbol_data.values()
+        if len(df) >= min_rows
+    )
+
+    logger.info(f"Data universe built: {successful_combinations}/{total_symbols * total_periods} symbol/period combinations meet minimum rows")
+
+    return data_universe📄 FEATURES.PY:
+import pandas as pd
+import numpy as np
+from typing import Optional, Dict, List, Union
+
+class FeatureBuilder:
+    """
+    Technical feature builder for quantitative strategy input.
+    Computes volatility, volume, trend, and cross-sectional metrics.
+    """
+
+    def __init__(self, data: pd.DataFrame):
+        """
+        Initialize with price/volume data.
+
+        Args:
+            data: DataFrame with columns ['open', 'high', 'low', 'close', 'volume']
+        """
+        self.data = data.copy()
+        self.features = pd.DataFrame(index=data.index)
+
+    def compute_all_features(self) -> pd.DataFrame:
+        """Compute all available technical features."""
+        self._volatility_features()
+        self._volume_features()
+        self._trend_features()
+        self._cross_sectional_features()
+        return self.features
+
+    def _volatility_features(self):
+        """Compute volatility-related features."""
+        close = self.data['close']
+        high = self.data['high']
+        low = self.data['low']
+
+        # Rolling standard deviations
+        for window in [5, 10, 20]:
+            self.features[f'vol_std_{window}d'] = close.rolling(window).std()
+
+        # Average True Range (ATR)
+        tr1 = high - low
+        tr2 = abs(high - close.shift())
+        tr3 = abs(low - close.shift())
+        true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+        self.features['atr_14'] = true_range.rolling(14).mean()
+        self.features['atr_ratio'] = self.features['atr_14'] / close
+
+        # RSI
+        self.features['rsi_14'] = self._compute_rsi(close, 14)
+        self.features['rsi_7'] = self._compute_rsi(close, 7)
+
+        # MACD
+        macd, signal, histogram = self._compute_macd(close)
+        self.features['macd'] = macd
+        self.features['macd_signal'] = signal
+        self.features['macd_histogram'] = histogram
+
+        # Bollinger Bands
+        bb_upper, bb_lower, bb_middle = self._compute_bollinger_bands(close, 20, 2)
+        self.features['bb_upper'] = bb_upper
+        self.features['bb_lower'] = bb_lower
+        self.features['bb_middle'] = bb_middle
+        self.features['bb_position'] = (close - bb_lower) / (bb_upper - bb_lower)
+        self.features['bb_width'] = (bb_upper - bb_lower) / bb_middle
+
+        # Volatility regime (rolling percentile)
+        vol_20d = close.pct_change().rolling(20).std()
+        self.features['vol_regime'] = vol_20d.rolling(60).apply(
+            lambda x: (x.iloc[-1] > x.quantile(0.8)) * 1 + (x.iloc[-1] > x.quantile(0.6)) * 1,
+            raw=False
+        )
+
+        # Price momentum features
+        for window in [5, 10, 20]:
+            self.features[f'momentum_{window}d'] = close.pct_change(window)
+
+        # High-Low volatility
+        self.features['hl_volatility'] = (high - low).rolling(10).std()
+
+    def _volume_features(self):
+        """Compute volume-related features."""
+        volume = self.data['volume']
+        close = self.data['close']
+        high = self.data['high']
+        low = self.data['low']
+
+        # Volume ratios
+        self.features['volume_ratio_5d'] = volume / volume.rolling(5).mean()
+        self.features['volume_ratio_20d'] = volume / volume.rolling(20).mean()
+
+        # Volume Z-score
+        volume_ma = volume.rolling(20).mean()
+        volume_std = volume.rolling(20).std()
+        self.features['volume_zscore'] = (volume - volume_ma) / volume_std
+
+        # VWAP and deviations
+        vwap = (self.data['close'] * volume).rolling(20).sum() / volume.rolling(20).sum()
+        self.features['vwap'] = vwap
+        self.features['vwap_deviation'] = (close - vwap) / vwap
+
+        # Volume-price correlation
+        self.features['volume_price_corr'] = volume.rolling(20).corr(close)
+
+        # On-balance volume
+        obv = self._compute_obv(close, volume)
+        self.features['obv'] = obv
+        self.features['obv_ma_ratio'] = obv / obv.rolling(20).mean()
+
+        # Accumulation/Distribution Line
+        adl = self._compute_adl(high, low, close, volume)
+        self.features['adl'] = adl
+
+        # Volume surge indicator
+        volume_median = volume.rolling(60).median()
+        volume_std_long = volume.rolling(60).std()
+        self.features['volume_surge'] = (volume - volume_median) / volume_std_long
+
+    def _trend_features(self):
+        """Compute trend-related features."""
+        close = self.data['close']
+
+        # SMA slopes
+        for period in [5, 10, 20, 50]:
+            sma = close.rolling(period).mean()
+            self.features[f'sma_{period}'] = sma
+            self.features[f'sma_slope_{period}'] = sma.diff() / sma
+
+        # EMA slopes
+        for period in [5, 10, 20]:
+            ema = close.ewm(span=period).mean()
+            self.features[f'ema_{period}'] = ema
+            self.features[f'ema_slope_{period}'] = ema.diff() / ema
+
+        # Linear regression slopes
+        for window in [10, 20]:
+            self.features[f'linreg_slope_{window}d'] = self._compute_linreg_slope(close, window)
+
+        # Moving average crossovers
+        sma_20 = close.rolling(20).mean()
+        sma_50 = close.rolling(50).mean()
+        self.features['sma_crossover'] = (sma_20 > sma_50).astype(int)
+        self.features['sma_crossover_strength'] = (sma_20 - sma_50) / sma_50
+
+        # Price position relative to moving averages
+        sma_20 = close.rolling(20).mean()
+        sma_50 = close.rolling(50).mean()
+        self.features['price_vs_sma20'] = close / sma_20 - 1
+        self.features['price_vs_sma50'] = close / sma_50 - 1
+
+        # Trend strength (ADX-like)
+        self.features['trend_strength'] = self._compute_trend_strength(
+            self.data['high'], self.data['low'], close
+        )
+
+    def _cross_sectional_features(self):
+        """Compute cross-sectional features (requires multiple instruments in practice)."""
+        close = self.data['close']
+
+        # Price rank (percentile within lookback window)
+        self.features['price_rank_20d'] = close.rolling(20).apply(
+            lambda x: (x.rank().iloc[-1] - 1) / (len(x) - 1) if len(x) > 1 else 0.5,
+            raw=False
+        )
+
+        # Relative strength vs own moving average
+        sma_20 = close.rolling(20).mean()
+        self.features['rel_strength_ma'] = close / sma_20 - 1
+
+        # Volatility-adjusted returns
+        returns = close.pct_change()
+        vol_20d = returns.rolling(20).std()
+        self.features['vol_adj_returns'] = returns / vol_20d.replace(0, 1)
+
+        # Z-score of price relative to recent history
+        price_mean = close.rolling(20).mean()
+        price_std = close.rolling(20).std()
+        self.features['price_zscore'] = (close - price_mean) / price_std.replace(0, 1)
+
+        # Momentum persistence
+        pos_returns = (returns > 0).rolling(5).sum()
+        self.features['momentum_persistence'] = pos_returns / 5
+
+        # Mean reversion indicator
+        self.features['mean_reversion'] = -self.features['price_zscore']
+
+    def _compute_rsi(self, prices: pd.Series, period: int = 14) -> pd.Series:
+        """Compute Relative Strength Index."""
+        delta = prices.diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+        return rsi
+
+    def _compute_macd(self, prices: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> tuple:
+        """Compute MACD line, signal line, and histogram."""
+        ema_fast = prices.ewm(span=fast).mean()
+        ema_slow = prices.ewm(span=slow).mean()
+        macd = ema_fast - ema_slow
+        macd_signal = macd.ewm(span=signal).mean()
+        macd_histogram = macd - macd_signal
+        return macd, macd_signal, macd_histogram
+
+    def _compute_bollinger_bands(self, prices: pd.Series, window: int = 20, num_std: int = 2) -> tuple:
+        """Compute Bollinger Bands."""
+        rolling_mean = prices.rolling(window).mean()
+        rolling_std = prices.rolling(window).std()
+        upper_band = rolling_mean + (rolling_std * num_std)
+        lower_band = rolling_mean - (rolling_std * num_std)
+        return upper_band, lower_band, rolling_mean
+
+    def _compute_obv(self, close: pd.Series, volume: pd.Series) -> pd.Series:
+        """Compute On-Balance Volume."""
+        obv = (volume * np.sign(close.diff())).cumsum()
+        return obv
+
+    def _compute_adl(self, high: pd.Series, low: pd.Series, close: pd.Series, volume: pd.Series) -> pd.Series:
+        """Compute Accumulation/Distribution Line."""
+        clv = ((close - low) - (high - close)) / (high - low).replace(0, 1)
+        adl = (clv * volume).cumsum()
+        return adl
+
+    def _compute_linreg_slope(self, prices: pd.Series, window: int) -> pd.Series:
+        """Compute linear regression slope over rolling window."""
+        def calc_slope(x):
+            if len(x) < 2:
+                return 0
+            x_axis = np.arange(len(x))
+            slope = np.polyfit(x_axis, x, 1)[0]
+            return slope / x.mean() if x.mean() != 0 else 0
+
+        return prices.rolling(window).apply(calc_slope, raw=True)
+
+    def _compute_trend_strength(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:
+        """Compute trend strength indicator (simplified ADX)."""
+        # Directional Movement
+        up_move = high.diff()
+        down_move = -low.diff()
+
+        plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0)
+        minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0)
+
+        # True Range
+        tr1 = high - low
+        tr2 = abs(high - close.shift())
+        tr3 = abs(low - close.shift())
+        true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+
+        # Smooth the values
+        atr = true_range.rolling(period).mean()
+        plus_di = 100 * (pd.Series(plus_dm, index=high.index).rolling(period).mean() / atr)
+        minus_di = 100 * (pd.Series(minus_dm, index=high.index).rolling(period).mean() / atr)
+
+        # Directional Index
+        dx = 100 * abs(plus_di - minus_di) / (plus_di + minus_di).replace(0, 1)
+        adx = dx.rolling(period).mean()
+
+        return adx
+
+def compute_features(data: pd.DataFrame, feature_config: Optional[Dict] = None) -> pd.DataFrame:
+    """
+    Main function to compute technical features from price/volume data.
+
+    Args:
+        data: DataFrame with columns ['open', 'high', 'low', 'close', 'volume']
+        feature_config: Optional configuration for feature selection
+
+    Returns:
+        DataFrame with computed features
+    """
+    builder = FeatureBuilder(data)
+    features = builder.compute_all_features()
+    return features📄 STRATEGY_RUNNER.PY:
+import numpy as np
+import pandas as pd
+from typing import Dict, List, Tuple, Any
+import copy
+
+class StrategyRunner:
+    def __init__(self):
+        self.backtester = Backtester()
+
+    def quick_paper_run(self, strategies: List[Any], data_universe: Dict[str, pd.DataFrame],
+                       risk_config: Dict[str, Any]) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        """
+        Run strategies in paper trading mode with real-time data and risk rules.
+
+        Args:
+            strategies: List of strategy objects with calculate_signals method
+            data_universe: Dictionary of symbol -> DataFrame with OHLCV data
+            risk_config: Dictionary containing risk management parameters
+
+        Returns:
+            equity_curve: DataFrame with timestamp and equity columns
+            per_strategy_pnl: DataFrame with strategy-wise PnL breakdown
+            per_symbol_pnl: DataFrame with symbol-wise PnL breakdown
+        """
+
+        # Initialize results containers
+        equity_data = []
+        strategy_pnl_data = {}
+        symbol_pnl_data = {}
+
+        # Create a copy of data for paper trading simulation
+        paper_data = copy.deepcopy(data_universe)
+
+        # Initialize positions and cash
+        positions = {symbol: 0 for symbol in data_universe.keys()}
+        initial_cash = risk_config.get('initial_capital', 100000)
+        cash = initial_cash
+
+        # Get all timestamps from the data
+        all_timestamps = set()
+        for symbol_data in data_universe.values():
+            all_timestamps.update(symbol_data.index)
+        sorted_timestamps = sorted(all_timestamps)
+
+        # Track strategy performance
+        strategy_performance = {strategy.__class__.__name__: {'pnl': 0, 'trades': 0} for strategy in strategies}
+
+        # Main simulation loop
+        for timestamp in sorted_timestamps:
+            daily_pnl = 0
+            daily_strategy_pnl = {}
+            daily_symbol_pnl = {}
+
+            # Calculate portfolio value at start of day
+            portfolio_value = cash
+            for symbol, pos in positions.items():
+                if symbol in paper_data and timestamp in paper_data[symbol].index:
+                    price = paper_data[symbol].loc[timestamp, 'close']
+                    portfolio_value += pos * price
+
+            # Execute strategies
+            for strategy in strategies:
+                strategy_name = strategy.__class__.__name__
+                signals = strategy.calculate_signals(paper_data, timestamp)
+
+                # Apply risk management and execute trades
+                for symbol, signal in signals.items():
+                    if symbol not in paper_data or timestamp not in paper_data[symbol].index:
+                        continue
+
+                    current_price = paper_data[symbol].loc[timestamp, 'close']
+                    current_position = positions.get(symbol, 0)
+
+                    # Apply position sizing based on risk rules
+                    max_position_size = self._calculate_position_size(risk_config, portfolio_value, current_price)
+
+                    # Generate target position
+                    if signal > 0.5:  # Buy signal
+                        target_position = min(max_position_size, int((cash * 0.1) / current_price))
+                    elif signal < -0.5:  # Sell signal
+                        target_position = max(-max_position_size, -int((portfolio_value * 0.1) / current_price))
+                    else:  # Hold
+                        target_position = current_position
+
+                    # Execute trade if position changed
+                    if target_position != current_position:
+                        trade_qty = target_position - current_position
+                        trade_cost = abs(trade_qty) * current_price * risk_config.get('transaction_cost', 0.001)
+
+                        # Update cash and positions
+                        cash -= trade_qty * current_price + trade_cost
+                        positions[symbol] = target_position
+
+                        strategy_performance[strategy_name]['trades'] += 1
+
+            # Calculate end-of-day PnL
+            end_portfolio_value = cash
+            for symbol, pos in positions.items():
+                if symbol in paper_data and timestamp in paper_data[symbol].index:
+                    price = paper_data[symbol].loc[timestamp, 'close']
+                    end_portfolio_value += pos * price
+
+                    # Calculate symbol PnL
+                    symbol_pnl = pos * (price - paper_data[symbol].loc[timestamp, 'open'])
+                    daily_symbol_pnl[symbol] = daily_symbol_pnl.get(symbol, 0) + symbol_pnl
+
+            daily_pnl = end_portfolio_value - portfolio_value
+
+            # Distribute PnL to strategies (simplified - equal distribution for now)
+            active_strategies = len([s for s in strategies if strategy_performance[s.__class__.__name__]['trades'] > 0])
+            if active_strategies > 0:
+                strategy_pnl_share = daily_pnl / active_strategies
+                for strategy in strategies:
+                    strategy_name = strategy.__class__.__name__
+                    if strategy_performance[strategy_name]['trades'] > 0:
+                        strategy_performance[strategy_name]['pnl'] += strategy_pnl_share
+                        daily_strategy_pnl[strategy_name] = strategy_pnl_share
+
+            # Record daily results
+            equity_data.append({
+                'timestamp': timestamp,
+                'equity': end_portfolio_value,
+                'cash': cash,
+                'daily_pnl': daily_pnl
+            })
+
+            # Update strategy PnL tracking
+            for strategy_name, pnl in daily_strategy_pnl.items():
+                if strategy_name not in strategy_pnl_data:
+                    strategy_pnl_data[strategy_name] = []
+                strategy_pnl_data[strategy_name].append({'timestamp': timestamp, 'pnl': pnl})
+
+            # Update symbol PnL tracking
+            for symbol, pnl in daily_symbol_pnl.items():
+                if symbol not in symbol_pnl_data:
+                    symbol_pnl_data[symbol] = []
+                symbol_pnl_data[symbol].append({'timestamp': timestamp, 'pnl': pnl})
+
+        # Create final DataFrames
+        equity_curve = pd.DataFrame(equity_data).set_index('timestamp')
+
+        per_strategy_pnl_data = []
+        for strategy_name, pnl_records in strategy_pnl_data.items():
+            strategy_df = pd.DataFrame(pnl_records).set_index('timestamp')
+            strategy_df['strategy'] = strategy_name
+            per_strategy_pnl_data.append(strategy_df)
+        per_strategy_pnl = pd.concat(per_strategy_pnl_data) if per_strategy_pnl_data else pd.DataFrame()
+
+        per_symbol_pnl_data = []
+        for symbol, pnl_records in symbol_pnl_data.items():
+            symbol_df = pd.DataFrame(pnl_records).set_index('timestamp')
+            symbol_df['symbol'] = symbol
+            per_symbol_pnl_data.append(symbol_df)
+        per_symbol_pnl = pd.concat(per_symbol_pnl_data) if per_symbol_pnl_data else pd.DataFrame()
+
+        return equity_curve, per_strategy_pnl, per_symbol_pnl
+
+    def _calculate_position_size(self, risk_config: Dict[str, Any], portfolio_value: float,
+                               current_price: float) -> int:
+        """Calculate maximum position size based on risk rules."""
+        max_position_pct = risk_config.get('max_position_size_pct', 0.1)
+        max_risk_per_trade = risk_config.get('max_risk_per_trade', 0.02)
+
+        # Calculate position size based on portfolio percentage
+        position_value = portfolio_value * max_position_pct
+        position_size = int(position_value / current_price)
+
+        # Apply risk-based position sizing
+        risk_position_size = int((portfolio_value * max_risk_per_trade) / current_price)
+
+        return min(position_size, risk_position_size)
+
+
+class Backtester:
+    """Mock backtester class for compatibility"""
+    def __init__(self):
+        pass📄 EXCHANGE_CLIENT.PY:
+import time
+import json
+import hashlib
+import hmac
+import urllib.parse
+from typing import List, Optional, Dict, Any
+import httpx
+import pandas as pd
+from abc import ABC, abstractmethod
+
+
+class ExchangeAPI(ABC):
+    """Base class for exchange API clients"""
+
+    @abstractmethod
+    def fetch_klines(self, symbol: str, period: str, size: int = 2000, from_id: Optional[int] = None) -> List[dict]:
+        """Fetch kline/candlestick data"""
+        pass
+
+    @abstractmethod
+    def list_symbols(self) -> List[dict]:
+        """Fetch available trading symbols"""
+        pass
+
+
+class HTXClient(ExchangeAPI):
+    """HTX (Huobi) REST API client"""
+
+    def __init__(self, api_key: str, api_secret: str, base_url: str = "https://api.huobi.pro"):
+        self.api_key = api_key
+        self.api_secret = api_secret
+        self.base_url = base_url.rstrip('/')
+        self.client = httpx.Client(timeout=30.0)
+
+    def _sign_request(self, method: str, endpoint: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Sign request for authenticated endpoints"""
+        if params is None:
+            params = {}
+
+        params.update({
+            'AccessKeyId': self.api_key,
+            'SignatureMethod': 'HmacSHA256',
+            'SignatureVersion': '2',
+            'Timestamp': time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime())
+        })
+
+        # Create signature
+        sorted_params = sorted(params.items())
+        query_string = '&'.join([f"{k}={urllib.parse.quote(str(v), safe='')}" for k, v in sorted_params])
+
+        payload = f"{method.upper()}\napi.huobi.pro\n{endpoint}\n{query_string}"
+        signature = hmac.new(
+            self.api_secret.encode('utf-8'),
+            payload.encode('utf-8'),
+            hashlib.sha256
+        ).digest()
+
+        params['Signature'] = base64.b64encode(signature).decode()
+        return params
+
+    def _make_request(self, endpoint: str, params: Dict[str, Any] = None, authenticated: bool = False) -> Dict[str, Any]:
+        """Make HTTP request with retry logic"""
+        max_retries = 3
+        base_delay = 1.0
+
+        for attempt in range(max_retries):
+            try:
+                url = f"{self.base_url}{endpoint}"
+
+                if authenticated:
+                    if params is None:
+                        params = {}
+                    signed_params = self._sign_request('GET', endpoint, params)
+                    response = self.client.get(url, params=signed_params)
+                else:
+                    response = self.client.get(url, params=params)
+
+                response.raise_for_status()
+                data = response.json()
+
+                # Check for API errors
+                if 'status' in data and data['status'] != 'ok':
+                    raise Exception(f"API error: {data.get('err-msg', 'Unknown error')}")
+
+                return data
+
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code in [429, 500, 502, 503, 504]:
+                    if attempt < max_retries - 1:
+                        delay = base_delay * (2 ** attempt)
+                        time.sleep(delay)
+                        continue
+                raise
+            except httpx.RequestError as e:
+                if attempt < max_retries - 1:
+                    delay = base_delay * (2 ** attempt)
+                    time.sleep(delay)
+                    continue
+                raise
+
+        raise Exception("Max retries exceeded")
+
+    def fetch_klines(self, symbol: str, period: str, size: int = 2000, from_id: Optional[int] = None) -> List[dict]:
+        """Fetch kline/candlestick data
+
+        Args:
+            symbol: Trading symbol (e.g., 'btcusdt')
+            period: Kline period (1min, 5min, 15min, 30min, 60min, 4hour, 1day, 1mon, 1week, 1year)
+            size: Number of klines to return (default: 2000)
+            from_id: Starting kline ID (optional)
+
+        Returns:
+            List of kline dicts with keys: id, open, high, low, close, vol
+        """
+        params = {
+            'symbol': symbol.lower(),
+            'period': period,
+            'size': min(size, 2000)  # HTX limit
+        }
+
+        data = self._make_request('/market/history/kline', params)
+
+        klines = []
+        for kline in data.get('data', []):
+            klines.append({
+                'id': kline['id'],
+                'open': float(kline['open']),
+                'high': float(kline['high']),
+                'low': float(kline['low']),
+                'close': float(kline['close']),
+                'vol': float(kline['vol'])
+            })
+
+        # Return in ascending order by ID
+        return sorted(klines, key=lambda x: x['id'])
+
+    def list_symbols(self) -> List[dict]:
+        """Fetch available trading symbols with 24h volume annotation
+
+        Returns:
+            List of symbol dicts with trading information
+        """
+        # Get base symbol information
+        symbols_data = self._make_request('/v1/common/symbols')
+        symbols_map = {}
+
+        for symbol in symbols_data.get('data', []):
+            symbols_map[symbol['symbol']] = {
+                'symbol': symbol['symbol'],
+                'base_currency': symbol['base-currency'],
+                'quote_currency': symbol['quote-currency'],
+                'price_precision': symbol['price-precision'],
+                'amount_precision': symbol['amount-precision'],
+                'min_order_amt': float(symbol.get('min-order-amt', 0)),
+                'min_order_value': float(symbol.get('min-order-value', 0)),
+                '24h_vol': 0.0  # Initialize volume
+            }
+
+        # Get 24h volume from tickers
+        try:
+            tickers_data = self._make_request('/market/tickers')
+            for ticker in tickers_data.get('data', []):
+                symbol = ticker['symbol']
+                if symbol in symbols_map:
+                    symbols_map[symbol]['24h_vol'] = float(ticker['vol'])
+        except Exception:
+            # If tickers fail, continue without volume data
+            pass
+
+        return list(symbols_map.values())
+
+    def fetch_tickers(self) -> List[dict]:
+        """Fetch all tickers"""
+        data = self._make_request('/market/tickers')
+        return data.get('data', [])
+
+    def fetch_depth(self, symbol: str, depth_type: str = 'step0') -> Dict[str, Any]:
+        """Fetch market depth
+
+        Args:
+            symbol: Trading symbol
+            depth_type: Depth type (step0, step1, step2, step3, step4, step5)
+        """
+        params = {
+            'symbol': symbol.lower(),
+            'type': depth_type
+        }
+        data = self._make_request('/market/depth', params)
+        return data
+
+    def fetch_trades(self, symbol: str, size: int = 2000) -> List[dict]:
+        """Fetch recent trades"""
+        params = {
+            'symbol': symbol.lower(),
+            'size': min(size, 2000)
+        }
+        data = self._make_request('/market/trade', params)
+        return data.get('data', [])
+
+    def close(self):
+        """Close HTTP client"""
+        self.client.close()
+
+
+import base64📄 HTX_FEED.PY:
+import asyncio
+import gzip
+import json
+import logging
+import threading
+import time
+from collections import defaultdict, deque
+from typing import Dict, List, Optional
+
+import numpy as np
+import pandas as pd
+import websockets
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+class HTXWebSocketFeeder:
+    def __init__(self, url: str = "wss://api.huobi.pro/ws"):
+        self.url = url
+        self.websocket = None
+        self.running = False
+        self.thread = None
+        self.loop = None
+
+        # Data storage
+        self.klines: Dict[str, deque] = defaultdict(lambda: deque(maxlen=1000))
+        self.tickers: Dict[str, dict] = {}
+        self.subscriptions = set()
+
+        # Thread safety
+        self.lock = threading.RLock()
+
+    def start(self):
+        """Start the WebSocket client in a separate thread."""
+        if self.running:
+            logger.warning("HTX feeder already running")
+            return
+
+        self.running = True
+        self.thread = threading.Thread(target=self._run_async, daemon=True)
+        self.thread.start()
+        logger.info("HTX feeder started")
+
+    def stop(self):
+        """Stop the WebSocket client."""
+        self.running = False
+        if self.loop and self.websocket:
+            asyncio.run_coroutine_threadsafe(self.websocket.close(), self.loop)
+        if self.thread:
+            self.thread.join(timeout=5)
+        logger.info("HTX feeder stopped")
+
+    def _run_async(self):
+        """Run the asyncio event loop in a separate thread."""
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_until_complete(self._connect())
+
+    async def _connect(self):
+        """Main connection handler with auto-reconnect."""
+        while self.running:
+            try:
+                async with websockets.connect(self.url, compression=None) as ws:
+                    self.websocket = ws
+                    logger.info("Connected to HTX WebSocket")
+
+                    # Resubscribe to previous channels
+                    await self._resubscribe()
+
+                    # Start ping task
+                    ping_task = asyncio.create_task(self._send_ping())
+
+                    # Main message loop
+                    try:
+                        async for message in ws:
+                            if not self.running:
+                                break
+                            await self.on_message(message)
+                    except websockets.exceptions.ConnectionClosed:
+                        logger.warning("HTX WebSocket connection closed")
+                    finally:
+                        ping_task.cancel()
+                        try:
+                            await ping_task
+                        except asyncio.CancelledError:
+                            pass
+
+            except Exception as e:
+                logger.error(f"HTX connection error: {e}")
+                await asyncio.sleep(5)  # Wait before reconnecting
+
+    async def _resubscribe(self):
+        """Resubscribe to all previously subscribed channels."""
+        with self.lock:
+            subscriptions = list(self.subscriptions)
+
+        for sub in subscriptions:
+            await self._send_subscription(sub)
+
+    async def _send_subscription(self, subscription: dict):
+        """Send subscription message to WebSocket."""
+        if self.websocket:
+            try:
+                await self.websocket.send(json.dumps(subscription))
+            except Exception as e:
+                logger.error(f"Failed to send subscription: {e}")
+
+    async def _send_ping(self):
+        """Send periodic ping messages to keep connection alive."""
+        while self.running and self.websocket:
+            try:
+                ping_msg = {"ping": int(time.time() * 1000)}
+                await self.websocket.send(json.dumps(ping_msg))
+                await asyncio.sleep(10)  # Send ping every 10 seconds
+            except Exception as e:
+                logger.error(f"Ping error: {e}")
+                break
+
+    async def on_message(self, raw_bytes):
+        """Handle incoming WebSocket messages."""
+        try:
+            # Decompress if gzipped
+            if isinstance(raw_bytes, bytes):
+                try:
+                    raw_bytes = gzip.decompress(raw_bytes)
+                except (OSError, EOFError):
+                    pass  # Not gzipped, use as-is
+
+            message = raw_bytes.decode('utf-8')
+            data = json.loads(message)
+
+            # Handle pong response
+            if "pong" in data:
+                return
+
+            # Handle subscribed confirmation
+            if data.get("status") == "ok" and data.get("subbed"):
+                logger.info(f"Subscribed to: {data['subbed']}")
+                return
+
+            # Handle kline data
+            if "ch" in data and "kline" in data["ch"]:
+                await self._handle_kline(data)
+
+            # Handle ticker data
+            if "ch" in data and "detail" in data["ch"]:
+                await self._handle_ticker(data)
+
+        except Exception as e:
+            logger.error(f"Error processing message: {e}")
+
+    async def _handle_kline(self, data: dict):
+        """Process kline/candlestick data."""
+        try:
+            channel = data["ch"]
+            symbol = channel.split(".")[1]
+            tick = data.get("tick", {})
+
+            if not tick:
+                return
+
+            kline_data = {
+                'timestamp': data.get("ts", tick.get("id", 0) * 1000),
+                'open': tick.get("open", 0.0),
+                'high': tick.get("high", 0.0),
+                'low': tick.get("low", 0.0),
+                'close': tick.get("close", 0.0),
+                'volume': tick.get("vol", 0.0),
+                'amount': tick.get("amount", 0.0)
+            }
+
+            with self.lock:
+                self.klines[symbol].append(kline_data)
+
+        except Exception as e:
+            logger.error(f"Error handling kline: {e}")
+
+    async def _handle_ticker(self, data: dict):
+        """Process ticker data."""
+        try:
+            channel = data["ch"]
+            symbol = channel.split(".")[1]
+            tick = data.get("tick", {})
+
+            if not tick:
+                return
+
+            ticker_data = {
+                'timestamp': data.get("ts", 0),
+                'open': tick.get("open", 0.0),
+                'high': tick.get("high", 0.0),
+                'low': tick.get("low", 0.0),
+                'close': tick.get("close", 0.0),
+                'volume': tick.get("vol", 0.0),
+                'amount': tick.get("amount", 0.0),
+                'count': tick.get("count", 0)
+            }
+
+            with self.lock:
+                self.tickers[symbol] = ticker_data
+
+        except Exception as e:
+            logger.error(f"Error handling ticker: {e}")
+
+    def subscribe_kline(self, symbol: str, period: str = "1min"):
+        """Subscribe to kline/candlestick data."""
+        subscription = {
+            "sub": f"market.{symbol}.kline.{period}",
+            "id": f"kline_{symbol}_{period}"
+        }
+
+        with self.lock:
+            self.subscriptions.add(json.dumps(subscription))
+
+        if self.loop and self.websocket:
+            asyncio.run_coroutine_threadsafe(
+                self._send_subscription(subscription),
+                self.loop
+            )
+
+    def subscribe_ticker(self, symbol: str):
+        """Subscribe to ticker data."""
+        subscription = {
+            "sub": f"market.{symbol}.detail",
+            "id": f"ticker_{symbol}"
+        }
+
+        with self.lock:
+            self.subscriptions.add(json.dumps(subscription))
+
+        if self.loop and self.websocket:
+            asyncio.run_coroutine_threadsafe(
+                self._send_subscription(subscription),
+                self.loop
+            )
+
+    def get_window_df(self, symbol: str, rows: int) -> pd.DataFrame:
+        """
+        Get rolling OHLCV window as DataFrame.
+
+        Args:
+            symbol: Trading symbol (e.g., 'btcusdt')
+            rows: Number of rows to return
+
+        Returns:
+            DataFrame with columns: timestamp, open, high, low, close, volume, amount
+        """
+        with self.lock:
+            if symbol not in self.klines or not self.klines[symbol]:
+                return pd.DataFrame()
+
+            kline_data = list(self.klines[symbol])[-rows:]
+
+        if not kline_data:
+            return pd.DataFrame()
+
+        df = pd.DataFrame(kline_data)
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df.set_index('timestamp', inplace=True)
+
+        # Ensure numeric columns
+        numeric_cols = ['open', 'high', 'low', 'close', 'volume', 'amount']
+        for col in numeric_cols:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+        return df.dropna()
+
+    def get_ticker(self, symbol: str) -> Optional[dict]:
+        """Get current ticker data for symbol."""
+        with self.lock:
+            return self.tickers.get(symbol)📄 RATE_LIMITER.PY:
+import time
+import threading
+from typing import Optional, Union
+import numpy as np
+
+
+class TokenBucketLimiter:
+    """
+    Token bucket rate limiter implementation for managing API call frequency.
+
+    The token bucket algorithm allows for bursts of requests up to the bucket capacity
+    while maintaining a steady average rate over time.
+    """
+
+    def __init__(self, rate_per_second: float, burst_capacity: Optional[int] = None):
+        """
+        Initialize the token bucket rate limiter.
+
+        Args:
+            rate_per_second: Maximum average rate of requests per second
+            burst_capacity: Maximum burst capacity (defaults to rate_per_second if None)
+        """
+        if rate_per_second <= 0:
+            raise ValueError("Rate per second must be positive")
+
+        self.rate = float(rate_per_second)
+        self.capacity = float(burst_capacity if burst_capacity is not None else rate_per_second)
+        self.tokens = self.capacity
+        self.last_refill_time = time.time()
+        self._lock = threading.RLock()
+
+    def _refill_tokens(self) -> None:
+        """Refill tokens based on elapsed time since last refill."""
+        with self._lock:
+            current_time = time.time()
+            time_elapsed = current_time - self.last_refill_time
+
+            # Calculate tokens to add based on elapsed time
+            tokens_to_add = time_elapsed * self.rate
+            self.tokens = min(self.capacity, self.tokens + tokens_to_add)
+            self.last_refill_time = current_time
+
+    def allow_request(self, tokens: float = 1.0) -> bool:
+        """
+        Check if a request is allowed without consuming tokens.
+
+        Args:
+            tokens: Number of tokens required for the request (default: 1.0)
+
+        Returns:
+            True if the request is allowed, False otherwise
+        """
+        if tokens <= 0:
+            raise ValueError("Tokens must be positive")
+
+        with self._lock:
+            self._refill_tokens()
+            return self.tokens >= tokens
+
+    def mark_request(self, tokens: float = 1.0) -> bool:
+        """
+        Check if a request is allowed and consume tokens if so.
+
+        Args:
+            tokens: Number of tokens required for the request (default: 1.0)
+
+        Returns:
+            True if the request was allowed and tokens were consumed, False otherwise
+        """
+        if tokens <= 0:
+            raise ValueError("Tokens must be positive")
+
+        with self._lock:
+            self._refill_tokens()
+
+            if self.tokens >= tokens:
+                self.tokens -= tokens
+                return True
+            return False
+
+    def remaining_quota(self) -> float:
+        """
+        Get the current number of available tokens.
+
+        Returns:
+            Number of tokens currently available in the bucket
+        """
+        with self._lock:
+            self._refill_tokens()
+            return self.tokens
+
+    def time_until_next_token(self) -> float:
+        """
+        Calculate the time until at least one token becomes available.
+
+        Returns:
+            Time in seconds until next token is available (0 if tokens are available now)
+        """
+        with self._lock:
+            self._refill_tokens()
+
+            if self.tokens >= 1.0:
+                return 0.0
+
+            tokens_needed = 1.0 - self.tokens
+            return tokens_needed / self.rate
+
+    def reset(self) -> None:
+        """Reset the token bucket to its initial state."""
+        with self._lock:
+            self.tokens = self.capacity
+            self.last_refill_time = time.time()
+
+
+class RateLimitManager:
+    """
+    Manager for multiple rate limiters, useful for handling different endpoints or clients.
+    """
+
+    def __init__(self):
+        self.limiters = {}
+        self._lock = threading.RLock()
+
+    def add_limiter(self, name: str, rate_per_second: float, burst_capacity: Optional[int] = None) -> None:
+        """
+        Add a rate limiter for a specific endpoint or client.
+
+        Args:
+            name: Identifier for the rate limiter
+            rate_per_second: Maximum average rate of requests per second
+            burst_capacity: Maximum burst capacity
+        """
+        with self._lock:
+            self.limiters[name] = TokenBucketLimiter(rate_per_second, burst_capacity)
+
+    def allow_request(self, name: str, tokens: float = 1.0) -> bool:
+        """
+        Check if a request is allowed for the specified limiter.
+
+        Args:
+            name: Identifier for the rate limiter
+            tokens: Number of tokens required for the request
+
+        Returns:
+            True if the request is allowed, False otherwise
+        """
+        with self._lock:
+            if name not in self.limiters:
+                raise KeyError(f"No rate limiter found for '{name}'")
+            return self.limiters[name].allow_request(tokens)
+
+    def mark_request(self, name: str, tokens: float = 1.0) -> bool:
+        """
+        Check if a request is allowed and consume tokens if so.
+
+        Args:
+            name: Identifier for the rate limiter
+            tokens: Number of tokens required for the request
+
+        Returns:
+            True if the request was allowed and tokens were consumed, False otherwise
+        """
+        with self._lock:
+            if name not in self.limiters:
+                raise KeyError(f"No rate limiter found for '{name}'")
+            return self.limiters[name].mark_request(tokens)
+
+    def remaining_quota(self, name: str) -> float:
+        """
+        Get the current number of available tokens for the specified limiter.
+
+        Args:
+            name: Identifier for the rate limiter
+
+        Returns:
+            Number of tokens currently available
+        """
+        with self._lock:
+            if name not in self.limiters:
+                raise KeyError(f"No rate limiter found for '{name}'")
+            return self.limiters[name].remaining_quota()
+
+
+def exponential_backoff(base_delay: float = 1.0, max_delay: float = 60.0,
+                       multiplier: float = 2.0, jitter: bool = True) -> float:
+    """
+    Calculate exponential backoff delay with optional jitter.
+
+    Args:
+        base_delay: Base delay in seconds
+        max_delay: Maximum delay in seconds
+        multiplier: Multiplier for each retry
+        jitter: Whether to add random jitter to avoid thundering herd
+
+    Returns:
+        Calculated delay in seconds
+    """
+    if base_delay <= 0 or max_delay <= 0 or multiplier <= 1.0:
+        raise ValueError("Invalid backoff parameters")
+
+    # Simple exponential backoff calculation
+    delay = min(base_delay * (multiplier ** np.random.randint(1, 10)), max_delay)
+
+    if jitter:
+        # Add ±25% jitter
+        jitter_factor = 1.0 + (np.random.random() - 0.5) * 0.5
+        delay *= jitter_factor
+
+    return float(delay)
+
+
+def linear_backoff(base_delay: float = 1.0, max_delay: float = 30.0,
+                  step: float = 1.0, jitter: bool = True) -> float:
+    """
+    Calculate linear backoff delay with optional jitter.
+
+    Args:
+        base_delay: Base delay in seconds
+        max_delay: Maximum delay in seconds
+        step: Linear step increase per retry
+        jitter: Whether to add random jitter
+
+    Returns:
+        Calculated delay in seconds
+    """
+    if base_delay <= 0 or max_delay <= 0 or step <= 0:
+        raise ValueError("Invalid backoff parameters")
+
+    # Simple linear backoff calculation
+    delay = min(base_delay + step * np.random.randint(1, 10), max_delay)
+
+    if jitter:
+        # Add ±25% jitter
+        jitter_factor = 1.0 + (np.random.random() - 0.5) * 0.5
+        delay *= jitter_factor
+
+    return float(delay)📄 MAIN.PY:
+from strategies import AdaptiveTradingStrategy
+import pandas as pd
+import numpy as np
+
+def main():
+    # Build synthetic OHLCV market data
+    np.random.seed(42)
+    dates = pd.date_range(start='2024-01-01', periods=100, freq='H')
+
+    market_data = pd.DataFrame({
+        'timestamp': dates,
+        'open': 50000 + np.cumsum(np.random.randn(100) * 100),
+        'high': 50000 + np.cumsum(np.random.randn(100) * 120),
+        'low': 50000 + np.cumsum(np.random.randn(100) * 80),
+        'close': 50000 + np.cumsum(np.random.randn(100) * 100),
+        'volume': np.random.randint(1000, 10000, 100)
+    })
+
+    # Ensure high >= close >= low, high >= open >= low
+    market_data['high'] = np.maximum(market_data['high'], market_data[['open', 'close']].max(axis=1))
+    market_data['low'] = np.minimum(market_data['low'], market_data[['open', 'close']].min(axis=1))
+
+    # Instantiate strategy and generate signals
+    strategy = AdaptiveTradingStrategy()
+    signals = strategy.generate_signals(market_data)
+
+    # Print summary
+    print(f"Generated {len(signals)} signals")
+    if len(signals) > 0:
+        print(f"Sample signals (first 5): {signals.head().to_dict()}")
+    else:
+        print("No signals generated")
+
+if __name__ == "__main__":
+    main()🤖 LIQUIDITY_MINER_AGENT.PY:
+import numpy as np
+import pandas as pd
+from typing import Dict, List, Tuple, Optional
+import requests
+import time
+from dataclasses import dataclass
+from enum import Enum
+import logging
+from scipy import stats
+from sklearn.ensemble import IsolationForest
+import warnings
+warnings.filterwarnings('ignore')
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class LiquiditySignal(Enum):
+    STRONG_SUPPORT = "strong_support"
+    STRONG_RESISTANCE = "strong_resistance"
+    IMBALANCE_BUY = "imbalance_buy"
+    IMBALANCE_SELL = "imbalance_sell"
+    HIDDEN_ABSORPTION = "hidden_absorption"
+    INSTITUTIONAL_ACCUMULATION = "institutional_accumulation"
+    NEUTRAL = "neutral"
+
+@dataclass
+class LiquidityZone:
+    price_level: float
+    volume: float
+    zone_type: str
+    confidence: float
+    timestamp: int
+
+@dataclass
+class ImbalanceSignal:
+    signal_type: LiquiditySignal
+    strength: float
+    price_levels: List[float]
+    expected_move: float
+    timeframe_minutes: int
+
+class HTXLiquidityMiner:
+    """
+    Advanced liquidity mining agent for HTX exchange focusing on institutional
+    order flow patterns and hidden liquidity detection.
+    """
+
+    def __init__(self, symbol: str = "BTCUSDT", api_key: Optional[str] = None):
+        self.symbol = symbol
+        self.api_key = api_key
+        self.base_url = "https://api.huobi.pro"
+        self.session = requests.Session()
+        self._anomaly_detector = IsolationForest(contamination=0.1, random_state=42)
+
+        # Pattern recognition thresholds
+        self.volume_threshold = 0.85  # 85th percentile for significant levels
+        self.imbalance_ratio_threshold = 2.0
+        self.absorption_threshold = 0.7
+        self.microstructure_lookback = 100
+
+    def get_depth_data(self, depth_type: str = "step0") -> Dict:
+        """Fetch order book depth data from HTX API."""
+        try:
+            url = f"{self.base_url}/market/depth"
+            params = {
+                "symbol": self.symbol.lower(),
+                "type": depth_type,
+                "depth": 150  # Extended depth for better analysis
+            }
+
+            response = self.session.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logger.error(f"Error fetching depth data: {e}")
+            return {"bids": [], "asks": []}
+
+    def _calculate_volume_profile(self, bids: List[List[float]], asks: List[List[float]]) -> pd.DataFrame:
+        """Calculate sophisticated volume profile with clustering."""
+        all_levels = []
+
+        # Process bids
+        for price, volume in bids:
+            all_levels.append({
+                'price': float(price),
+                'volume': float(volume),
+                'side': 'bid',
+                'value': float(price) * float(volume)
+            })
+
+        # Process asks
+        for price, volume in asks:
+            all_levels.append({
+                'price': float(price),
+                'volume': float(volume),
+                'side': 'ask',
+                'value': float(price) * float(volume)
+            })
+
+        df = pd.DataFrame(all_levels)
+
+        if df.empty:
+            return df
+
+        # Volume clustering using statistical methods
+        df['volume_zscore'] = stats.zscore(df['volume'])
+        df['value_zscore'] = stats.zscore(df['value'])
+
+        # Identify significant levels using multiple criteria
+        volume_threshold = df['volume'].quantile(self.volume_threshold)
+        value_threshold = df['value'].quantile(self.volume_threshold)
+
+        df['significant'] = (
+            (df['volume'] >= volume_threshold) |
+            (df['value'] >= value_threshold) |
+            (df['volume_zscore'] >= 1.5) |
+            (df['value_zscore'] >= 1.5)
+        )
+
+        return df
+
+    def _detect_hidden_absorption(self, depth_data: Dict) -> Tuple[bool, float]:
+        """
+        Detect hidden institutional absorption patterns.
+        Looks for large orders being filled without significant price movement.
+        """
+        bids = depth_data.get('bids', [])
+        asks = depth_data.get('asks', [])
+
+        if not bids or not asks:
+            return False, 0.0
+
+        # Calculate bid-ask spread characteristics
+        best_bid = float(bids[0][0])
+        best_ask = float(asks[0][0])
+        spread = best_ask - best_bid
+
+        # Analyze depth distribution for absorption patterns
+        bid_volumes = [float(bid[1]) for bid in bids[:20]]
+        ask_volumes = [float(ask[1]) for ask in asks[:20]]
+
+        # Look for volume anomalies that suggest absorption
+        bid_volume_std = np.std(bid_volumes)
+        ask_volume_std = np.std(ask_volumes)
+
+        # Absorption typically shows high volume with low volatility
+        absorption_score = min(bid_volume_std, ask_volume_std) / max(bid_volume_std, ask_volume_std)
+
+        is_absorbing = absorption_score < self.absorption_threshold
+        absorption_strength = 1.0 - absorption_score
+
+        return is_absorbing, absorption_strength
+
+    def _calculate_microstructure_imbalance(self, depth_data: Dict) -> Tuple[float, LiquiditySignal]:
+        """
+        Calculate advanced order book imbalance using microstructure theory.
+        Focuses on predictive signals rather than simple volume ratios.
+        """
+        bids = depth_data.get('bids', [])
+        asks = depth_data.get('asks', [])
+
+        if not bids or not asks:
+            return 0.0, LiquiditySignal.NEUTRAL
+
+        # Multi-level imbalance calculation
+        levels_to_analyze = min(50, len(bids), len(asks))
+
+        bid_pressure = 0.0
+        ask_pressure = 0.0
+
+        for i in range(levels_to_analyze):
+            bid_price = float(bids[i][0])
+            bid_volume = float(bids[i][1])
+            ask_price = float(asks[i][0])
+            ask_volume = float(asks[i][1])
+
+            # Weight by distance from mid-price and volume
+            mid_price = (bid_price + ask_price) / 2
+            bid_weight = (mid_price - bid_price) / mid_price
+            ask_weight = (ask_price - mid_price) / mid_price
+
+            bid_pressure += bid_volume * (1 + bid_weight)
+            ask_pressure += ask_volume * (1 + ask_weight)
+
+        total_pressure = bid_pressure + ask_pressure
+        if total_pressure == 0:
+            return 0.0, LiquiditySignal.NEUTRAL
+
+        imbalance = (bid_pressure - ask_pressure) / total_pressure
+
+        # Determine signal type based on imbalance strength
+        if imbalance > 0.1:
+            signal = LiquiditySignal.IMBALANCE_BUY
+        elif imbalance < -0.1:
+            signal = LiquiditySignal.IMBALANCE_SELL
+        else:
+            signal = LiquiditySignal.NEUTRAL
+
+        return imbalance, signal
+
+    def _detect_institutional_patterns(self, depth_data: Dict) -> List[LiquidityZone]:
+        """
+        Detect institutional trading patterns using advanced algorithms.
+        Focuses on block orders, iceberg detection, and accumulation/distribution.
+        """
+        volume_profile = self._calculate_volume_profile(
+            depth_data.get('bids', []),
+            depth_data.get('asks', [])
+        )
+
+        if volume_profile.empty:
+            return []
+
+        significant_levels = volume_profile[volume_profile['significant']]
+        liquidity_zones = []
+
+        current_time = int(time.time() * 1000)
+
+        for _, level in significant_levels.iterrows():
+            # Calculate confidence based on multiple factors
+            volume_confidence = min(level['volume_zscore'] / 3.0, 1.0)
+            value_confidence = min(level['value_zscore'] / 3.0, 1.0)
+            confidence = max(volume_confidence, value_confidence)
+
+            zone_type = "support" if level['side'] == 'bid' else "resistance"
+
+            liquidity_zones.append(
+                LiquidityZone(
+                    price_level=level['price'],
+                    volume=level['volume'],
+                    zone_type=zone_type,
+                    confidence=confidence,
+                    timestamp=current_time
+                )
+            )
+
+        return liquidity_zones
+
+    def analyze_liquidity(self) -> Tuple[List[LiquidityZone], List[ImbalanceSignal]]:
+        """
+        Main analysis method that combines all detection algorithms.
+        Returns liquidity zones and imbalance signals.
+        """
+        logger.info(f"Analyzing liquidity for {self.symbol}")
+
+        # Fetch depth data
+        depth_data = self.get_depth_data()
+
+        if not depth_data.get('bids') or not depth_data.get('asks'):
+            logger.warning("No depth data available")
+            return [], []
+
+        # Run all detection algorithms
+        liquidity_zones = self._detect_institutional_patterns(depth_data)
+        imbalance_ratio, imbalance_signal = self._calculate_microstructure_imbalance(depth_data)
+        is_absorbing, absorption_strength = self._detect_hidden_absorption(depth_data)
+
+        # Generate imbalance signals
+        imbalance_signals = []
+
+        # Microstructure imbalance signal
+        if imbalance_signal != LiquiditySignal.NEUTRAL:
+            strength = min(abs(imbalance_ratio) * 10, 1.0)
+            price_levels = [float(depth_data['bids'][0][0]), float(depth_data['asks'][0][0])]
+
+            imbalance_signals.append(
+                ImbalanceSignal(
+                    signal_type=imbalance_signal,
+                    strength=strength,
+                    price_levels=price_levels,
+                    expected_move=abs(imbalance_ratio) * 0.02,  # 2% expected move
+                    timeframe_minutes=30
+                )
+            )
+
+        # Hidden absorption signal
+        if is_absorbing:
+            mid_price = (float(depth_data['bids'][0][0]) + float(depth_data['asks'][0][0])) / 2
+            absorption_signal_type = (
+                LiquiditySignal.INSTITUTIONAL_ACCUMULATION
+                if absorption_strength > 0.8
+                else LiquiditySignal.HIDDEN_ABSORPTION
+            )
+
+            imbalance_signals.append(
+                ImbalanceSignal(
+                    signal_type=absorption_signal_type,
+                    strength=absorption_strength,
+                    price_levels=[mid_price],
+                    expected_move=absorption_strength * 0.015,
+                    timeframe_minutes=60
+                )
+            )
+
+        logger.info(f"Found {len(liquidity_zones)} liquidity zones and {len(imbalance_signals)} imbalance signals")
+        return liquidity_zones, imbalance_signals
+
+    def get_trading_recommendation(self) -> Dict:
+        """
+        Generate trading recommendations based on liquidity analysis.
+        """
+        liquidity_zones, imbalance_signals = self.analyze_liquidity()
+
+        recommendation = {
+            "symbol": self.symbol,
+            "timestamp": int(time.time() * 1000),
+            "liquidity_zones": [
+                {
+                    "price": zone.price_level,
+                    "volume": zone.volume,
+                    "type": zone.zone_type,
+                    "confidence": zone.confidence
+                }
+                for zone in liquidity_zones
+            ],
+            "signals": [
+                {
+                    "type": signal.signal_type.value,
+                    "strength": signal.strength,
+                    "price_levels": signal.price_levels,
+                    "expected_move_percent": signal.expected_move * 100,
+                    "timeframe_minutes": signal.timeframe_minutes
+                }
+                for signal in imbalance_signals
+            ],
+            "overall_sentiment": "neutral"
+        }
+
+        # Determine overall sentiment
+        if imbalance_signals:
+            buy_signals = [s for s in imbalance_signals if s.signal_type in
+                          [LiquiditySignal.IMBALANCE_BUY, LiquiditySignal.INSTITUTIONAL_ACCUMULATION]]
+            sell_signals = [s for s in imbalance_signals if s.signal_type in
+                           [LiquiditySignal.IMBALANCE_SELL, LiquiditySignal.HIDDEN_ABSORPTION]]
+
+            if buy_signals and not sell_signals:
+                recommendation["overall_sentiment"] = "bullish"
+            elif sell_signals and not buy_signals:
+                recommendation["overall_sentiment"] = "bearish"
+            elif buy_signals and sell_signals:
+                # Weight by signal strength
+                buy_strength = sum(s.strength for s in buy_signals)
+                sell_strength = sum(s.strength for s in sell_signals)
+                recommendation["overall_sentiment"] = "bullish" if buy_strength > sell_strength else "bearish"
+
+        return recommendation
+
+# Example usage and testing
+if __name__ == "__main__":
+    # Test the liquidity miner
+    miner = HTXLiquidityMiner(symbol="BTCUSDT")
+
+    try:
+        recommendation = miner.get_trading_recommendation()
+        print("Liquidity Analysis Results:")
+        print(f"Symbol: {recommendation['symbol']}")
+        print(f"Overall Sentiment: {recommendation['overall_sentiment']}")
+        print(f"Liquidity Zones: {len(recommendation['liquidity_zones'])}")
+        print(f"Signals: {len(recommendation['signals'])}")
+
+        for signal in recommendation['signals']:
+            print(f"  - {signal['type']}: Strength {signal['strength']:.2f}, "
+                  f"Expected Move: {signal['expected_move_percent']:.2f}%")
+
+    except Exception as e:
+        print(f"Error during analysis: {e}")🤖 VOLATILITY_PREDICTOR_AGENT.PY:
+#!/usr/bin/env python3
+"""
+Volatility Predictor Agent - Advanced Regime Detection & Turbulence Forecasting
+Unconventional Alpha Sources: Funding Rate Dynamics, Cross-Asset Spillover, Institutional Flow Patterns
+"""
+
+import numpy as np
+import pandas as pd
+from scipy import stats
+from sklearn.ensemble import IsolationForest
+from sklearn.preprocessing import StandardScaler
+import warnings
+warnings.filterwarnings('ignore')
+
+class VolatilityPredictorAgent:
+    """
+    Autonomous agent for volatility regime forecasting using unconventional alpha sources
+    Focus: Predictive signals BEFORE price moves using institutional data advantages
+    """
+
+    def __init__(self, config=None):
+        self.config = config or {}
+        self.scaler = StandardScaler()
+        self.regime_model = None
+        self.turbulence_model = None
+        self.feature_importance = {}
+
+        # HTX-specific institutional data advantages
+        self.funding_rate_lookback = 24  # hours
+        self.cross_asset_correlations = ['BTC-USDT', 'ETH-USDT', 'SOL-USDT', 'ADA-USDT']
+        self.volatility_regimes = ['low', 'normal', 'high', 'extreme']
+
+    def fetch_htx_data(self, symbol, period='1h', limit=500):
+        """
+        Fetch HTX API data with institutional-grade error handling
+        """
+        try:
+            # Mock implementation - replace with actual HTX API calls
+            # Example: client.get_kline(symbol=symbol, interval=period, limit=limit)
+            dates = pd.date_range(end=pd.Timestamp.now(), periods=limit, freq=period)
+            prices = np.cumsum(np.random.randn(limit) * 0.01) + 100
+            volumes = np.abs(np.random.randn(limit) * 1000) + 10000
+
+            df = pd.DataFrame({
+                'timestamp': dates,
+                'close': prices,
+                'volume': volumes,
+                'high': prices + np.abs(np.random.randn(limit) * 2),
+                'low': prices - np.abs(np.random.randn(limit) * 2)
+            })
+            df.set_index('timestamp', inplace=True)
+            return df
+
+        except Exception as e:
+            print(f"HTX API Error: {e}")
+            return None
+
+    def calculate_funding_rate_signals(self, perpetual_data):
+        """
+        Advanced funding rate analysis - institutional flow predictor
+        Unconventional alpha: Funding rate momentum and regime changes
+        """
+        if perpetual_data is None or len(perpetual_data) < self.funding_rate_lookback:
+            return None
+
+        # Mock funding rate data - replace with actual perpetual futures data
+        funding_rates = np.random.randn(len(perpetual_data)) * 0.001
+
+        # Advanced funding rate features
+        features = {}
+
+        # Funding rate momentum (institutional positioning)
+        features['funding_momentum_8h'] = (
+            funding_rates[-1] - np.mean(funding_rates[-8:])
+        ) / (np.std(funding_rates[-8:]) + 1e-8)
+
+        # Funding rate regime change detection
+        rolling_std = pd.Series(funding_rates).rolling(12).std()
+        features['funding_volatility_regime'] = (
+            rolling_std.iloc[-1] > rolling_std.quantile(0.8)
+        )
+
+        # Funding rate mean reversion extreme
+        z_score = abs(funding_rates[-1] - np.mean(funding_rates)) / (np.std(funding_rates) + 1e-8)
+        features['funding_extreme'] = z_score > 2.0
+
+        return features
+
+    def calculate_cross_asset_spillover(self, symbols=None):
+        """
+        Cross-asset volatility spillover analysis
+        Unconventional alpha: Inter-market contagion before price moves
+        """
+        symbols = symbols or self.cross_asset_correlations
+
+        spillover_features = {}
+
+        # Fetch data for all correlated assets
+        asset_data = {}
+        for symbol in symbols:
+            data = self.fetch_htx_data(symbol)
+            if data is not None:
+                asset_data[symbol] = data
+
+        if len(asset_data) < 2:
+            return None
+
+        # Calculate rolling correlations and spillover metrics
+        returns_data = {}
+        for symbol, data in asset_data.items():
+            returns = data['close'].pct_change().dropna()
+            returns_data[symbol] = returns[-100:]  # Last 100 periods
+
+        # Dynamic correlation matrix
+        corr_matrix = pd.DataFrame(returns_data).corr()
+
+        # Spillover intensity (average correlation strength)
+        spillover_features['correlation_intensity'] = (
+            corr_matrix.abs().sum().sum() - len(corr_matrix)
+        ) / (len(corr_matrix) * (len(corr_matrix) - 1))
+
+        # Correlation regime change
+        rolling_corrs = []
+        for i in range(len(returns_data[symbols[0]]) - 20):
+            window_data = {sym: returns[sym].iloc[i:i+20] for sym in symbols}
+            window_corr = pd.DataFrame(window_data).corr().abs().mean().mean()
+            rolling_corrs.append(window_corr)
+
+        spillover_features['correlation_regime_change'] = (
+            rolling_corrs[-1] > np.percentile(rolling_corrs, 75)
+        )
+
+        # Cross-asset volatility clustering
+        volatilities = [returns.std() for returns in returns_data.values()]
+        spillover_features['volatility_clustering'] = np.std(volatilities)
+
+        return spillover_features
+
+    def advanced_garch_estimation(self, returns_series):
+        """
+        Enhanced GARCH modeling with regime-switching capabilities
+        Unconventional alpha: Conditional volatility dynamics
+        """
+        # Simplified GARCH(1,1) implementation
+        omega, alpha, beta = 0.1, 0.1, 0.8  # Initial parameters
+
+        returns = returns_series.dropna().values
+        n = len(returns)
+
+        # Initialize variance array
+        sigma2 = np.zeros(n)
+        sigma2[0] = np.var(returns)
+
+        # GARCH recursion
+        for t in range(1, n):
+            sigma2[t] = omega + alpha * returns[t-1]**2 + beta * sigma2[t-1]
+
+        # Advanced features
+        garch_features = {}
+        garch_features['conditional_volatility'] = np.sqrt(sigma2[-1])
+        garch_features['volatility_persistence'] = alpha + beta
+        garch_features['volatility_shock_response'] = alpha / (1 - beta) if beta < 1 else 1.0
+
+        # Volatility regime classification
+        vol_quantiles = np.percentile(np.sqrt(sigma2), [25, 50, 75])
+        current_vol = np.sqrt(sigma2[-1])
+
+        if current_vol <= vol_quantiles[0]:
+            garch_features['volatility_regime'] = 'low'
+        elif current_vol <= vol_quantiles[1]:
+            garch_features['volatility_regime'] = 'normal'
+        elif current_vol <= vol_quantiles[2]:
+            garch_features['volatility_regime'] = 'high'
+        else:
+            garch_features['volatility_regime'] = 'extreme'
+
+        return garch_features
+
+    def institutional_flow_analysis(self, volume_data, price_data):
+        """
+        Detect institutional flow patterns from volume-price relationships
+        Unconventional alpha: Smart money detection before volatility spikes
+        """
+        if len(volume_data) < 50:
+            return None
+
+        volume = volume_data.values
+        prices = price_data.values
+        returns = np.diff(np.log(prices))
+
+        flow_features = {}
+
+        # Volume-price divergence (institutional accumulation/distribution)
+        volume_z = stats.zscore(volume[-20:])
+        price_z = stats.zscore(prices[-20:])
+        flow_features['volume_price_divergence'] = np.corrcoef(volume_z, price_z)[0,1]
+
+        # Abnormal volume clustering
+        volume_rolling_mean = pd.Series(volume).rolling(20).mean()
+        volume_rolling_std = pd.Series(volume).rolling(20).std()
+        current_volume_z = (volume[-1] - volume_rolling_mean.iloc[-1]) / volume_rolling_std.iloc[-1]
+        flow_features['abnormal_volume'] = abs(current_volume_z) > 2.0
+
+        # Volume regime persistence
+        high_volume_regime = volume > volume_rolling_mean + volume_rolling_std
+        flow_features['volume_regime_persistence'] = np.mean(high_volume_regime[-10:])
+
+        return flow_features
+
+    def extract_predictive_features(self, symbol='BTC-USDT'):
+        """
+        Extract comprehensive predictive features from multiple unconventional sources
+        """
+        # Fetch base data
+        spot_data = self.fetch_htx_data(symbol)
+        if spot_data is None:
+            return None
+
+        returns = spot_data['close'].pct_change().dropna()
+
+        # Multi-source feature extraction
+        features = {}
+
+        # 1. Funding rate dynamics (perpetual futures)
+        perpetual_data = self.fetch_htx_data(symbol.replace('-', ''))  # HTX perpetual symbol
+        funding_features = self.calculate_funding_rate_signals(perpetual_data)
+        if funding_features:
+            features.update(funding_features)
+
+        # 2. Cross-asset spillover
+        spillover_features = self.calculate_cross_asset_spillover()
+        if spillover_features:
+            features.update(spillover_features)
+
+        # 3. Advanced GARCH modeling
+        garch_features = self.advanced_garch_estimation(returns)
+        features.update(garch_features)
+
+        # 4. Institutional flow analysis
+        flow_features = self.institutional_flow_analysis(
+            spot_data['volume'], spot_data['close']
+        )
+        if flow_features:
+            features.update(flow_features)
+
+        # 5. Technical volatility measures (enhanced)
+        features['realized_volatility_20h'] = returns[-20:].std()
+        features['volatility_ratio'] = (
+            returns[-10:].std() / (returns[-50:].std() + 1e-8)
+        )
+        features['volatility_regime_change'] = features['volatility_ratio'] > 1.5
+
+        return features
+
+    def train_volatility_regime_model(self, training_data):
+        """
+        Train ensemble model for volatility regime classification
+        """
+        if not training_data or len(training_data) < 100:
+            print("Insufficient training data")
+            return None
+
+        # Convert to feature matrix
+        feature_matrix = []
+        target_regimes = []
+
+        for sample in training_data:
+            features = list(sample['features'].values())
+            feature_matrix.append(features)
+            target_regimes.append(sample['regime'])
+
+        X = np.array(feature_matrix)
+        y = np.array(target_regimes)
+
+        # Scale features
+        X_scaled = self.scaler.fit_transform(X)
+
+        # Train isolation forest for anomaly detection (turbulence)
+        self.turbulence_model = IsolationForest(
+            contamination=0.1, random_state=42
+        )
+        self.turbulence_model.fit(X_scaled)
+
+        # Feature importance (simplified)
+        self.feature_importance = {
+            'funding_momentum': 0.15,
+            'cross_asset_spillover': 0.20,
+            'conditional_volatility': 0.25,
+            'institutional_flow': 0.20,
+            'volume_regime': 0.10,
+            'technical_volatility': 0.10
+        }
+
+        print("Volatility regime model trained successfully")
+        return True
+
+    def predict_volatility_regime(self, current_features):
+        """
+        Predict volatility regime and spike probability
+        """
+        if not current_features:
+            return {'volatility_regime': 'unknown', 'spike_probability': 0.0}
+
+        feature_vector = np.array(list(current_features.values())).reshape(1, -1)
+
+        # Regime classification based on feature thresholds
+        regime_score = 0.0
+
+        # Weighted feature scoring
+        if 'conditional_volatility' in current_features:
+            vol = current_features['conditional_volatility']
+            if vol > 0.03:
+                regime_score += 0.4
+            elif vol > 0.02:
+                regime_score += 0.2
+
+        if 'volatility_regime_change' in current_features:
+            if current_features['volatility_regime_change']:
+                regime_score += 0.3
+
+        if 'correlation_regime_change' in current_features:
+            if current_features['correlation_regime_change']:
+                regime_score += 0.2
+
+        if 'abnormal_volume' in current_features:
+            if current_features['abnormal_volume']:
+                regime_score += 0.1
+
+        # Regime classification
+        if regime_score >= 0.7:
+            regime = 'extreme'
+            spike_prob = 0.8
+        elif regime_score >= 0.5:
+            regime = 'high'
+            spike_prob = 0.6
+        elif regime_score >= 0.3:
+            regime = 'normal'
+            spike_prob = 0.3
+        else:
+            regime = 'low'
+            spike_prob = 0.1
+
+        # Turbulence detection
+        if self.turbulence_model is not None:
+            feature_scaled = self.scaler.transform(feature_vector)
+            turbulence_score = self.turbulence_model.decision_function(feature_scaled)[0]
+            if turbulence_score < -0.1:  # Anomaly threshold
+                spike_prob = min(spike_prob + 0.3, 0.95)
+
+        return {
+            'volatility_regime': regime,
+            'spike_probability': round(spike_prob, 3),
+            'regime_score': round(regime_score, 3),
+            'feature_importance': self.feature_importance
+        }
+
+    def generate_trading_signals(self, prediction):
+        """
+        Generate actionable trading signals based on volatility predictions
+        """
+        regime = prediction['volatility_regime']
+        spike_prob = prediction['spike_probability']
+
+        signals = {}
+
+        if regime in ['high', 'extreme'] and spike_prob > 0.7:
+            signals['primary_signal'] = 'SHORT_VOLATILITY'
+            signals['confidence'] = 'high'
+            signals['timeframe'] = 'intraday'
+            signals['rationale'] = 'Expected volatility mean reversion'
+
+        elif regime == 'low' and spike_prob > 0.6:
+            signals['primary_signal'] = 'LONG_VOLATILITY'
+            signals['confidence'] = 'medium'
+            signals['timeframe'] = 'swing'
+            signals['rationale'] = 'Volatility compression likely to expand'
+
+        else:
+            signals['primary_signal'] = 'NEUTRAL'
+            signals['confidence'] = 'low'
+            signals['timeframe'] = 'monitor'
+            signals['rationale'] = 'No clear volatility edge'
+
+        signals['prediction_details'] = prediction
+
+        return signals
+
+    def run_analysis(self, symbol='BTC-USDT'):
+        """
+        Main analysis pipeline
+        """
+        print(f"🔍 Volatility Predictor Agent analyzing {symbol}...")
+
+        # Extract predictive features
+        features = self.extract_predictive_features(symbol)
+        if not features:
+            print("❌ Feature extraction failed")
+            return None
+
+        print(f"✅ Extracted {len(features)} predictive features")
+
+        # Predict volatility regime
+        prediction = self.predict_volatility_regime(features)
+
+        # Generate trading signals
+        signals = self.generate_trading_signals(prediction)
+
+        # Comprehensive output
+        result = {
+            'symbol': symbol,
+            'timestamp': pd.Timestamp.now(),
+            'features': features,
+            'prediction': prediction,
+            'signals': signals,
+            'agent_version': '1.0'
+        }
+
+        print(f"📊 Volatility Regime: {prediction['volatility_regime'].upper()}")
+        print(f"🎯 Spike Probability: {prediction['spike_probability']:.1%}")
+        print(f"📈 Trading Signal: {signals['primary_signal']}")
+        print(f"💡 Rationale: {signals['rationale']}")
+
+        return result
+
+# Testing and demonstration
+if __name__ == "__main__":
+    # Initialize agent
+    agent = VolatilityPredictorAgent()
+
+    # Run analysis
+    result = agent.run_analysis('BTC-USDT')
+
+    # Display feature importance
+    if result and 'prediction' in result:
+        print("\n🔍 Feature Importance:")
+        for feature, importance in result['prediction']['feature_importance'].items():
+            print(f"   {feature}: {importance:.1%}")🤖 WHALE_HUNTER_AGENT.PY:
+#!/usr/bin/env python3
+"""
+whale_hunter_agent.py
+Advanced institutional flow tracking and whale movement prediction agent
+Specialized for HTX exchange with unconventional alpha sources
+"""
+
+import asyncio
+import logging
+import pandas as pd
+import numpy as np
+from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+import aiohttp
+import json
+from scipy import stats
+from sklearn.ensemble import IsolationForest
+import warnings
+warnings.filterwarnings('ignore')
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('whale_hunter')
+
+@dataclass
+class WhaleSignal:
+    """Container for whale prediction signals"""
+    symbol: str
+    signal_type: str  # 'buy' or 'sell'
+    confidence: float  # 0.0 to 1.0
+    magnitude: float  # Expected impact magnitude
+    timestamp: datetime
+    reasoning: List[str]
+    expected_timeframe: str  # 'immediate', 'short_term', 'medium_term'
+
+class HTXDataFetcher:
+    """Specialized HTX API data fetcher with institutional focus"""
+
+    def __init__(self, base_url: str = "https://api.huobi.pro"):
+        self.base_url = base_url
+        self.session = None
+
+    async def __aenter__(self):
+        self.session = aiohttp.ClientSession()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self.session:
+            await self.session.close()
+
+    async def fetch_large_trades(self, symbol: str, limit: int = 500) -> List[Dict]:
+        """Fetch large trades (institutional flow indicator)"""
+        try:
+            url = f"{self.base_url}/v1/history/trade"
+            params = {
+                'symbol': symbol.replace('/', '').lower(),
+                'size': limit
+            }
+
+            async with self.session.get(url, params=params) as response:
+                data = await response.json()
+                return self._filter_large_trades(data.get('data', []))
+        except Exception as e:
+            logger.error(f"Error fetching large trades for {symbol}: {e}")
+            return []
+
+    async def fetch_orderbook_depth(self, symbol: str, depth: str = "step0") -> Dict:
+        """Fetch detailed order book depth"""
+        try:
+            url = f"{self.base_url}/market/depth"
+            params = {
+                'symbol': symbol.replace('/', '').lower(),
+                'type': depth
+            }
+
+            async with self.session.get(url, params=params) as response:
+                return await response.json()
+        except Exception as e:
+            logger.error(f"Error fetching orderbook for {symbol}: {e}")
+            return {}
+
+    async def fetch_market_detail(self, symbol: str) -> Dict:
+        """Fetch 24h market detail including volume"""
+        try:
+            url = f"{self.base_url}/market/detail"
+            params = {
+                'symbol': symbol.replace('/', '').lower()
+            }
+
+            async with self.session.get(url, params=params) as response:
+                return await response.json()
+        except Exception as e:
+            logger.error(f"Error fetching market detail for {symbol}: {e}")
+            return {}
+
+    def _filter_large_trades(self, trades: List[Dict], threshold_percentile: float = 0.85) -> List[Dict]:
+        """Filter trades to identify large (institutional) transactions"""
+        if not trades:
+            return []
+
+        # Calculate volume percentiles
+        volumes = [float(trade['amount']) * float(trade['price']) for trade in trades]
+        if not volumes:
+            return []
+
+        volume_threshold = np.percentile(volumes, threshold_percentile * 100)
+
+        large_trades = []
+        for trade in trades:
+            volume = float(trade['amount']) * float(trade['price'])
+            if volume >= volume_threshold:
+                large_trades.append({
+                    **trade,
+                    'volume': volume,
+                    'is_buy': trade['direction'] == 'buy'
+                })
+
+        return large_trades
+
+class WhalePatternAnalyzer:
+    """Advanced pattern recognition for whale movement detection"""
+
+    def __init__(self):
+        self.anomaly_detector = IsolationForest(contamination=0.1, random_state=42)
+
+    def analyze_orderbook_imbalance(self, orderbook: Dict) -> Dict[str, float]:
+        """Analyze order book for institutional positioning patterns"""
+        try:
+            bids = np.array([[float(bid[0]), float(bid[1])] for bid in orderbook.get('tick', {}).get('bids', [])[:20]])
+            asks = np.array([[float(ask[0]), float(ask[1])] for ask in orderbook.get('tick', {}).get('asks', [])[:20]])
+
+            if len(bids) == 0 or len(asks) == 0:
+                return {}
+
+            # Calculate weighted bid-ask spreads and volumes
+            bid_pressure = np.sum(bids[:, 0] * bids[:, 1])
+            ask_pressure = np.sum(asks[:, 0] * asks[:, 1])
+
+            # Advanced imbalance metrics
+            depth_imbalance = (bid_pressure - ask_pressure) / (bid_pressure + ask_pressure)
+            volume_concentration = self._calculate_volume_concentration(bids, asks)
+            support_resistance_ratio = self._calculate_support_resistance_ratio(bids, asks)
+
+            return {
+                'depth_imbalance': depth_imbalance,
+                'volume_concentration': volume_concentration,
+                'support_resistance_ratio': support_resistance_ratio,
+                'bid_pressure': bid_pressure,
+                'ask_pressure': ask_pressure
+            }
+        except Exception as e:
+            logger.error(f"Error analyzing orderbook imbalance: {e}")
+            return {}
+
+    def analyze_trade_flow_momentum(self, large_trades: List[Dict]) -> Dict[str, float]:
+        """Analyze momentum and patterns in large trade flows"""
+        if not large_trades:
+            return {}
+
+        try:
+            # Convert to DataFrame for analysis
+            df = pd.DataFrame(large_trades)
+            df['timestamp'] = pd.to_datetime(df['ts'], unit='ms')
+            df = df.sort_values('timestamp')
+
+            # Calculate rolling metrics
+            df['volume_ma'] = df['volume'].rolling(window=10, min_periods=1).mean()
+            df['volume_std'] = df['volume'].rolling(window=10, min_periods=1).std()
+
+            # Detect trade clusters (whale accumulation/distribution)
+            recent_trades = df.tail(20)
+            buy_trades = recent_trades[recent_trades['is_buy'] == True]
+            sell_trades = recent_trades[recent_trades['is_buy'] == False]
+
+            # Advanced momentum indicators
+            volume_momentum = self._calculate_volume_momentum(df)
+            trade_intensity = len(recent_trades) / 20  # Normalized intensity
+            net_flow_ratio = (len(buy_trades) - len(sell_trades)) / len(recent_trades) if len(recent_trades) > 0 else 0
+
+            # Anomaly detection in trade patterns
+            anomaly_score = self._detect_trade_anomalies(df)
+
+            return {
+                'volume_momentum': volume_momentum,
+                'trade_intensity': trade_intensity,
+                'net_flow_ratio': net_flow_ratio,
+                'anomaly_score': anomaly_score,
+                'buy_volume_ratio': len(buy_trades) / len(recent_trades) if len(recent_trades) > 0 else 0,
+                'large_trade_count': len(large_trades)
+            }
+        except Exception as e:
+            logger.error(f"Error analyzing trade flow momentum: {e}")
+            return {}
+
+    def _calculate_volume_concentration(self, bids: np.ndarray, asks: np.ndarray) -> float:
+        """Calculate how concentrated volume is at key price levels"""
+        if len(bids) == 0 or len(asks) == 0:
+            return 0.0
+
+        total_bid_volume = np.sum(bids[:, 1])
+        total_ask_volume = np.sum(asks[:, 1])
+
+        # Herfindahl index for volume concentration
+        bid_concentration = np.sum((bids[:, 1] / total_bid_volume) ** 2) if total_bid_volume > 0 else 0
+        ask_concentration = np.sum((asks[:, 1] / total_ask_volume) ** 2) if total_ask_volume > 0 else 0
+
+        return (bid_concentration + ask_concentration) / 2
+
+    def _calculate_support_resistance_ratio(self, bids: np.ndarray, asks: np.ndarray) -> float:
+        """Calculate the ratio of support to resistance levels"""
+        if len(bids) == 0 or len(asks) == 0:
+            return 1.0
+
+        # Weighted average prices for support/resistance
+        weighted_bid_price = np.sum(bids[:, 0] * bids[:, 1]) / np.sum(bids[:, 1])
+        weighted_ask_price = np.sum(asks[:, 0] * asks[:, 1]) / np.sum(asks[:, 1])
+
+        mid_price = (weighted_bid_price + weighted_ask_price) / 2
+        support_strength = weighted_bid_price / mid_price
+        resistance_strength = weighted_ask_price / mid_price
+
+        return support_strength / resistance_strength
+
+    def _calculate_volume_momentum(self, df: pd.DataFrame) -> float:
+        """Calculate momentum in trading volume"""
+        if len(df) < 5:
+            return 0.0
+
+        recent_volume = df['volume'].tail(5).values
+        previous_volume = df['volume'].head(max(1, len(df) - 5)).tail(5).values
+
+        if len(previous_volume) < 5:
+            return 0.0
+
+        momentum = (np.mean(recent_volume) - np.mean(previous_volume)) / np.mean(previous_volume)
+        return float(momentum)
+
+    def _detect_trade_anomalies(self, df: pd.DataFrame) -> float:
+        """Detect anomalous trading patterns using isolation forest"""
+        if len(df) < 10:
+            return 0.0
+
+        features = []
+        for i in range(len(df)):
+            if i < 5:
+                features.append([df.iloc[i]['volume'], 0, 0])
+            else:
+                window = df.iloc[i-5:i]
+                volume_mean = window['volume'].mean()
+                volume_std = window['volume'].std()
+                volume_trend = (df.iloc[i]['volume'] - volume_mean) / volume_std if volume_std > 0 else 0
+                features.append([df.iloc[i]['volume'], volume_trend, len(window[window['is_buy']]) / 5])
+
+        try:
+            anomaly_scores = self.anomaly_detector.fit_predict(features)
+            # Convert to 0-1 scale where 1 is most anomalous
+            return float(np.mean(anomaly_scores == -1))
+        except:
+            return 0.0
+
+class WhaleHunterAgent:
+    """
+    Autonomous agent for detecting institutional whale movements and generating predictive signals
+    """
+
+    def __init__(self, symbols: List[str] = None):
+        self.symbols = symbols or ['BTC/USDT', 'ETH/USDT', 'ADA/USDT']
+        self.data_fetcher = HTXDataFetcher()
+        self.pattern_analyzer = WhalePatternAnalyzer()
+        self.signals_history: List[WhaleSignal] = []
+
+        # Signal thresholds (tuned for institutional detection)
+        self.buy_threshold = 0.65
+        self.sell_threshold = 0.65
+        self.confidence_threshold = 0.6
+
+    async def analyze_symbol(self, symbol: str) -> List[WhaleSignal]:
+        """Comprehensive analysis for a single symbol"""
+        signals = []
+
+        async with self.data_fetcher as fetcher:
+            # Fetch multiple data sources concurrently
+            large_trades_task = fetcher.fetch_large_trades(symbol)
+            orderbook_task = fetcher.fetch_orderbook_depth(symbol)
+            market_detail_task = fetcher.fetch_market_detail(symbol)
+
+            large_trades, orderbook, market_detail = await asyncio.gather(
+                large_trades_task, orderbook_task, market_detail_task,
+                return_exceptions=True
+            )
+
+            # Handle any fetch errors
+            if isinstance(large_trades, Exception):
+                logger.error(f"Error fetching large trades: {large_trades}")
+                large_trades = []
+            if isinstance(orderbook, Exception):
+                logger.error(f"Error fetching orderbook: {orderbook}")
+                orderbook = {}
+            if isinstance(market_detail, Exception):
+                logger.error(f"Error fetching market detail: {market_detail}")
+                market_detail = {}
+
+            # Advanced pattern analysis
+            orderbook_analysis = self.pattern_analyzer.analyze_orderbook_imbalance(orderbook)
+            trade_analysis = self.pattern_analyzer.analyze_trade_flow_momentum(large_trades)
+
+            # Generate signals based on combined analysis
+            buy_signal = self._generate_buy_signal(symbol, orderbook_analysis, trade_analysis, market_detail)
+            sell_signal = self._generate_sell_signal(symbol, orderbook_analysis, trade_analysis, market_detail)
+
+            if buy_signal:
+                signals.append(buy_signal)
+            if sell_signal:
+                signals.append(sell_signal)
+
+        return signals
+
+    def _generate_buy_signal(self, symbol: str, orderbook_analysis: Dict,
+                           trade_analysis: Dict, market_detail: Dict) -> Optional[WhaleSignal]:
+        """Generate buy signal based on whale accumulation patterns"""
+        reasoning = []
+        confidence_factors = []
+
+        # Order book based signals
+        if orderbook_analysis.get('depth_imbalance', 0) > 0.1:
+            reasoning.append("Strong bid-side order book imbalance detected")
+            confidence_factors.append(0.3)
+
+        if orderbook_analysis.get('support_resistance_ratio', 1) > 1.05:
+            reasoning.append("Support levels significantly stronger than resistance")
+            confidence_factors.append(0.25)
+
+        # Trade flow based signals
+        if trade_analysis.get('net_flow_ratio', 0) > 0.3:
+            reasoning.append("Net positive large trade flow")
+            confidence_factors.append(0.2)
+
+        if trade_analysis.get('volume_momentum', 0) > 0.2:
+            reasoning.append("Strong positive volume momentum")
+            confidence_factors.append(0.15)
+
+        # Anomaly detection
+        if trade_analysis.get('anomaly_score', 0) > 0.3:
+            reasoning.append("Unusual accumulation pattern detected")
+            confidence_factors.append(0.1)
+
+        if not confidence_factors:
+            return None
+
+        confidence = min(1.0, sum(confidence_factors))
+
+        if confidence >= self.buy_threshold:
+            magnitude = self._calculate_signal_magnitude(orderbook_analysis, trade_analysis)
+            timeframe = self._determine_timeframe(confidence, trade_analysis)
+
+            return WhaleSignal(
+                symbol=symbol,
+                signal_type='buy',
+                confidence=confidence,
+                magnitude=magnitude,
+                timestamp=datetime.now(),
+                reasoning=reasoning,
+                expected_timeframe=timeframe
+            )
+
+        return None
+
+    def _generate_sell_signal(self, symbol: str, orderbook_analysis: Dict,
+                            trade_analysis: Dict, market_detail: Dict) -> Optional[WhaleSignal]:
+        """Generate sell signal based on whale distribution patterns"""
+        reasoning = []
+        confidence_factors = []
+
+        # Order book based signals
+        if orderbook_analysis.get('depth_imbalance', 0) < -0.1:
+            reasoning.append("Strong ask-side order book imbalance detected")
+            confidence_factors.append(0.3)
+
+        if orderbook_analysis.get('support_resistance_ratio', 1) < 0.95:
+            reasoning.append("Resistance levels significantly stronger than support")
+            confidence_factors.append(0.25)
+
+        # Trade flow based signals
+        if trade_analysis.get('net_flow_ratio', 0) < -0.3:
+            reasoning.append("Net negative large trade flow")
+            confidence_factors.append(0.2)
+
+        if trade_analysis.get('volume_momentum', 0) < -0.2:
+            reasoning.append("Strong negative volume momentum")
+            confidence_factors.append(0.15)
+
+        # Anomaly detection
+        if trade_analysis.get('anomaly_score', 0) > 0.3 and trade_analysis.get('net_flow_ratio', 0) < 0:
+            reasoning.append("Unusual distribution pattern detected")
+            confidence_factors.append(0.1)
+
+        if not confidence_factors:
+            return None
+
+        confidence = min(1.0, sum(confidence_factors))
+
+        if confidence >= self.sell_threshold:
+            magnitude = self._calculate_signal_magnitude(orderbook_analysis, trade_analysis)
+            timeframe = self._determine_timeframe(confidence, trade_analysis)
+
+            return WhaleSignal(
+                symbol=symbol,
+                signal_type='sell',
+                confidence=confidence,
+                magnitude=magnitude,
+                timestamp=datetime.now(),
+                reasoning=reasoning,
+                expected_timeframe=timeframe
+            )
+
+        return None
+
+    def _calculate_signal_magnitude(self, orderbook_analysis: Dict, trade_analysis: Dict) -> float:
+        """Calculate expected signal magnitude based on analysis factors"""
+        magnitude_factors = []
+
+        # Order book depth impact
+        imbalance_strength = abs(orderbook_analysis.get('depth_imbalance', 0))
+        magnitude_factors.append(imbalance_strength * 0.4)
+
+        # Volume concentration impact
+        volume_concentration = orderbook_analysis.get('volume_concentration', 0)
+        magnitude_factors.append(volume_concentration * 0.3)(base) root@Ubuntu-2404-noble-amd64-base ~/KEEP_SAFE/v1/e22_iteration_2 #
