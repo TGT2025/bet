@@ -10,6 +10,14 @@ from .persistence import PersistenceManager
 from .alpha_scorer import AlphaScorer
 from .diversity_gate import DiversityGate
 from .agent_activity_tracker import AgentActivityTracker
+from .alpha_library import (
+    ALPHA_LIBRARY,
+    get_alpha_by_category,
+    get_alpha_by_regime,
+    get_high_sharpe_alphas,
+    get_alpha_by_id,
+    get_recommended_alphas
+)
 
 __all__ = [
     'SignalAdapter',
@@ -19,4 +27,10 @@ __all__ = [
     'AlphaScorer',
     'DiversityGate',
     'AgentActivityTracker',
+    'ALPHA_LIBRARY',
+    'get_alpha_by_category',
+    'get_alpha_by_regime',
+    'get_high_sharpe_alphas',
+    'get_alpha_by_id',
+    'get_recommended_alphas',
 ]
