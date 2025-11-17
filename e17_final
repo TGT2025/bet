@@ -2686,7 +2686,7 @@ if __name__ == "__main__":
                 alpha_hunter_logger.info("   • Analyzing strategy sophistication (alpha score)")
                 alpha_hunter_logger.info("   • Checking for signal diversity and edge detection")
                 alpha_hunter_logger.info("   • Validating risk management and position sizing")
-                alpha_hunter_logger.info(f"   • Threshold: Alpha score must be ≥ {self.INITIAL_ALPHA_THRESHOLD}")
+                alpha_hunter_logger.info(f"   • Threshold: Alpha score must be ≥ {INITIAL_ALPHA_THRESHOLD}")
                 alpha_hunter_logger.info("🎯 Output: Strategy viability decision")
                 
                 self._log_phase_progress("enforcer", iteration, "info", "Alpha validation")
