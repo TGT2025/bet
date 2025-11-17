@@ -13,7 +13,7 @@ from datetime import datetime
 class MemoryManager:
     """Manages persistent memory state for adaptive learning"""
     
-    def __init__(self, memory_file: str = "training_memory.json"):
+    def __init__(self, memory_file: str = "monolith/training_memory.json"):
         self.memory_file = memory_file
         self.state = self._load_or_initialize()
     

@@ -11,7 +11,7 @@ from datetime import datetime
 class DiagnosticsManager:
     """Manages diagnostic context for adaptive prompts"""
     
-    def __init__(self, diagnostics_file: str = "diagnostics.txt"):
+    def __init__(self, diagnostics_file: str = "monolith/diagnostics.txt"):
         self.diagnostics_file = diagnostics_file
         self.manual_notes_marker = "# MANUAL_NOTES_START"
         self.manual_notes = []

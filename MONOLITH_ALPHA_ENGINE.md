@@ -15,13 +15,11 @@ This document describes the complete integration of the Monolith Alpha Engine in
    - `persistence.py` - Saves candidate signals and metrics history
    - `alpha_scorer.py` - Dynamic alpha scoring with adaptive thresholds
    - `diversity_gate.py` - Validates signal diversity requirements
-
-2. **Interface Contracts** (repo root)
    - `interface_contracts.txt` - Authoritative specification for all components
    - `diagnostics.txt` - Auto-updated diagnostics with failure patterns
    - `training_memory.json` - Persistent state across iterations
 
-3. **e17final Integration**
+2. **e17final Integration**
    - Embedded fallback constants for contracts/diagnostics
    - Enhanced validation pipeline (5 stages including signal conversion)
    - Memory and diagnostics update methods
@@ -94,8 +92,8 @@ Standardized error tags for tracking and adaptation:
 ```python
 # Monolith Alpha Engine components
 self.signal_adapter = SignalAdapter()
-self.memory_manager = MemoryManager("training_memory.json")
-self.diagnostics_manager = DiagnosticsManager("diagnostics.txt")
+self.memory_manager = MemoryManager("monolith/training_memory.json")
+self.diagnostics_manager = DiagnosticsManager("monolith/diagnostics.txt")
 self.persistence_manager = PersistenceManager("candidates", "metrics_history.json")
 self.alpha_scorer = AlphaScorer(base_threshold=0.45, lowered_threshold=0.40)
 self.diversity_gate = DiversityGate(min_total_signals=6, min_symbols=2, min_signals_per_symbol=3)
@@ -142,11 +140,8 @@ If monolith modules are not available:
 ## Files Modified
 
 1. **e17final** - Main monolith file with integrated components
-2. **monolith/** - New package with 6 modules
-3. **interface_contracts.txt** - New contract specification
-4. **diagnostics.txt** - New diagnostics seed file
-5. **training_memory.json** - New memory state file
-6. **.gitignore** - Exclude artifacts and caches
+2. **monolith/** - New package with 9 files (6 modules + 3 data files)
+3. **.gitignore** - Exclude artifacts and caches
 
 ## Testing
 

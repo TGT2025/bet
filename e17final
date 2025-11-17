@@ -577,7 +577,7 @@ notes:
 
 def load_contract_spec() -> str:
     """Load contract spec from file or return embedded fallback"""
-    contract_file = "interface_contracts.txt"
+    contract_file = "monolith/interface_contracts.txt"
     if os.path.exists(contract_file):
         try:
             with open(contract_file, 'r') as f:
@@ -588,7 +588,7 @@ def load_contract_spec() -> str:
 
 def load_diagnostics_text() -> str:
     """Load diagnostics from file or return embedded fallback"""
-    diag_file = "diagnostics.txt"
+    diag_file = "monolith/diagnostics.txt"
     if os.path.exists(diag_file):
         try:
             with open(diag_file, 'r') as f:
@@ -1532,8 +1532,8 @@ class E22MinTradesEnforcedSystem:
         # 🎯 MONOLITH ALPHA ENGINE: Initialize adaptive learning components
         if MONOLITH_ALPHA_AVAILABLE:
             self.signal_adapter = SignalAdapter()
-            self.memory_manager = MemoryManager("training_memory.json")
-            self.diagnostics_manager = DiagnosticsManager("diagnostics.txt")
+            self.memory_manager = MemoryManager("monolith/training_memory.json")
+            self.diagnostics_manager = DiagnosticsManager("monolith/diagnostics.txt")
             self.persistence_manager = PersistenceManager("candidates", "metrics_history.json")
             self.alpha_scorer = AlphaScorer(base_threshold=0.45, lowered_threshold=0.40)
             self.diversity_gate = DiversityGate(min_total_signals=6, min_symbols=2, min_signals_per_symbol=3)

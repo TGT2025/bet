@@ -15,15 +15,11 @@ A complete Python package (`monolith/`) with 6 specialized modules:
 - **persistence.py**: Saves candidate signals and metrics for analysis
 - **alpha_scorer.py**: Calculates dynamic alpha scores with adaptive thresholds
 - **diversity_gate.py**: Validates signal diversity requirements
-
-### 2. Interface Specifications
-Three authoritative contract files at repository root:
-
 - **interface_contracts.txt**: Complete specification for all components
 - **diagnostics.txt**: Auto-updated failure patterns and adaptations
 - **training_memory.json**: Persistent state across iterations
 
-### 3. Enhanced e17_final System
+### 2. Enhanced e17_final System
 Seamless integration with minimal code changes:
 
 - Embedded fallback constants for contracts/diagnostics
@@ -70,8 +66,8 @@ Standardized tags for failure tracking:
 ```python
 if MONOLITH_ALPHA_AVAILABLE:
     self.signal_adapter = SignalAdapter()
-    self.memory_manager = MemoryManager("training_memory.json")
-    self.diagnostics_manager = DiagnosticsManager("diagnostics.txt")
+    self.memory_manager = MemoryManager("monolith/training_memory.json")
+    self.diagnostics_manager = DiagnosticsManager("monolith/diagnostics.txt")
     self.persistence_manager = PersistenceManager("candidates", "metrics_history.json")
     self.alpha_scorer = AlphaScorer(base_threshold=0.45, lowered_threshold=0.40)
     self.diversity_gate = DiversityGate(min_total_signals=6, min_symbols=2, min_signals_per_symbol=3)
@@ -148,11 +144,12 @@ monolith/diagnostics_manager.py
 monolith/persistence.py
 monolith/alpha_scorer.py
 monolith/diversity_gate.py
-interface_contracts.txt
-diagnostics.txt
-training_memory.json
+monolith/interface_contracts.txt
+monolith/diagnostics.txt
+monolith/training_memory.json
 .gitignore
 MONOLITH_ALPHA_ENGINE.md
+INTEGRATION_SUMMARY.md
 ```
 
 ### Modified Files (1)
@@ -265,4 +262,4 @@ The Monolith Alpha Engine integration is **complete, tested, and ready for deplo
 **Status: ✅ READY FOR PRODUCTION**
 
 For detailed technical documentation, see: `MONOLITH_ALPHA_ENGINE.md`
-For interface specifications, see: `interface_contracts.txt`
+For interface specifications, see: `monolith/interface_contracts.txt`
