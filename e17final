@@ -27,6 +27,26 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+# =========================================================================================
+# MONOLITH ALPHA ENGINE IMPORTS
+# =========================================================================================
+try:
+    from monolith import (
+        SignalAdapter,
+        MemoryManager,
+        DiagnosticsManager,
+        PersistenceManager,
+        AlphaScorer,
+        DiversityGate
+    )
+    MONOLITH_ALPHA_AVAILABLE = True
+    logger_pre = logging.getLogger("UltimateTradingBot")
+    if logger_pre.hasHandlers():
+        logger_pre.info("✅ Monolith Alpha Engine modules loaded")
+except ImportError as e:
+    MONOLITH_ALPHA_AVAILABLE = False
+    print(f"⚠️  Monolith Alpha Engine not available: {e}")
+
 def setup_enhanced_logging():
     """Setup comprehensive logging with different levels and formats"""
 
@@ -458,6 +478,99 @@ CODE REQUIREMENTS:
 VALIDATION: Code will be parsed, imported, and executed immediately.
 Return ONLY the raw Python code without markdown.
 """
+
+# =========================================================================================
+# 🎯 MONOLITH ALPHA ENGINE: EMBEDDED FALLBACK CONSTANTS
+# =========================================================================================
+
+CONTRACT_SPEC = """INTERFACE CONTRACTS
+
+1. Market Data:
+   Type: Dict[str, pd.DataFrame]
+   Required columns: ['timestamp','open','high','low','close','volume']
+   If 'high' or 'low' missing:
+     high = close * (1 + 0.001)
+     low  = close * (1 - 0.001)
+   Normalization:
+     - Forward fill then drop remaining NaNs
+     - Ascending by timestamp
+   Minimum rows per symbol: 30
+
+2. Strategy Output:
+   generate_signals(market_data: Dict[str, pd.DataFrame]) -> List[Dict] (existing monolith)
+   Each dict should minimally include:
+     { 'symbol': str, 'action': 'BUY'|'SELL', 'price': float, 'strategy': str, optional 'confidence': float }
+   ADAPTER will convert these to standardized DataFrame for scoring & persistence:
+     ['timestamp','symbol','side','size','entry_price','stop_loss','take_profit','confidence','reason']
+   If list empty for normal OHLCV noise, regeneration triggers.
+
+3. Orchestrator:
+   AlphaOrchestrator.get_consensus_signal(market_data) -> Dict:
+     direction: int (-1,0,1)
+     confidence: float (0..1)
+     institutional_flow: float (0..1)
+     reasoning: str
+   No markdown fences, no example usage.
+
+4. Alpha Scoring Formula:
+   alpha = 0.35*diversity + 0.40*avg_confidence + 0.25*trade_ratio
+   Base threshold = 0.45
+   If cumulative (LOW_SIGNAL + INTERFACE_ERROR) >= 6 -> lower threshold temporarily to 0.40
+
+5. Diversity Gate:
+   Pass if (signals >= 6) OR (>=2 symbols AND each >=3 signals)
+
+6. Error Taxonomy Tags:
+   SYNTAX_ERROR, INTERFACE_ERROR, LOW_SIGNAL, LOW_ALPHA, RUNTIME_FAIL, BACKTEST_FALLBACK, NORMALIZATION_WARN
+
+7. Prohibited in generated files:
+   - Markdown fences (```).
+   - Example usage blocks in orchestrator/strategies.
+   - Removing AdaptiveTradingStrategy class.
+"""
+
+DIAGNOSTICS_FALLBACK = """# DIAGNOSTICS (fallback)
+timestamp: INIT
+iteration: 0
+
+recent_failures:
+  - None
+
+failure_frequencies:
+  None
+
+active_adaptations:
+  None
+
+notes:
+  - Contracts enforced.
+  - Await first iteration to populate diagnostics.
+
+# MANUAL_NOTES_START
+  - You can add manual overrides here; preserved across updates.
+"""
+
+def load_contract_spec() -> str:
+    """Load contract spec from file or return embedded fallback"""
+    contract_file = "interface_contracts.txt"
+    if os.path.exists(contract_file):
+        try:
+            with open(contract_file, 'r') as f:
+                return f.read()
+        except Exception:
+            pass
+    return CONTRACT_SPEC
+
+def load_diagnostics_text() -> str:
+    """Load diagnostics from file or return embedded fallback"""
+    diag_file = "diagnostics.txt"
+    if os.path.exists(diag_file):
+        try:
+            with open(diag_file, 'r') as f:
+                return f.read()
+        except Exception:
+            pass
+    return DIAGNOSTICS_FALLBACK
 
 # =========================================================================================
 # 🎯 CRITICAL FIX 4: ENHANCED ALPHA VALIDATION THRESHOLDS
@@ -1390,6 +1503,24 @@ class E22MinTradesEnforcedSystem:
         # Start heartbeat monitoring immediately
         self.heartbeat_monitor.start()
         logger.info("💗 Production systems initialized (checkpointing, heartbeat, watchdog, agent memory)")
+        
+        # 🎯 MONOLITH ALPHA ENGINE: Initialize adaptive learning components
+        if MONOLITH_ALPHA_AVAILABLE:
+            self.signal_adapter = SignalAdapter()
+            self.memory_manager = MemoryManager("training_memory.json")
+            self.diagnostics_manager = DiagnosticsManager("diagnostics.txt")
+            self.persistence_manager = PersistenceManager("candidates", "metrics_history.json")
+            self.alpha_scorer = AlphaScorer(base_threshold=0.45, lowered_threshold=0.40)
+            self.diversity_gate = DiversityGate(min_total_signals=6, min_symbols=2, min_signals_per_symbol=3)
+            logger.info("🎯 Monolith Alpha Engine initialized (adaptive learning, alpha scoring, diversity gate)")
+        else:
+            self.signal_adapter = None
+            self.memory_manager = None
+            self.diagnostics_manager = None
+            self.persistence_manager = None
+            self.alpha_scorer = None
+            self.diversity_gate = None
+            logger.warning("⚠️  Monolith Alpha Engine not available - running without adaptive learning")
 
     def _log_phase_progress(self, phase: str, iteration: int, status: str, details: str = ""):
         """Log phase progress with emoji indicators"""
@@ -1665,6 +1796,12 @@ class E22MinTradesEnforcedSystem:
             "- If trade frequency low/zero, include strategy_adjustments with 'loosen_thresholds'.\n"
             "- No placeholders; everything implementable this iteration.\n"
             "- Include regeneration_policy and risk_tuning if relevant.\n"
+            "\n"
+            "=== INTERFACE CONTRACTS ===\n"
+            f"{load_contract_spec()}\n"
+            "\n"
+            "=== CURRENT DIAGNOSTICS ===\n"
+            f"{load_diagnostics_text()}\n"
         )
 
         user_prompt = f"""
@@ -1940,6 +2077,12 @@ require_real_data (bool, true to forbid synthetic sources).
                 "You are a SENIOR PYTHON QUANT IMPLEMENTER.\n"
                 "Return ONLY raw Python code for the requested file.\n"
                 "No markdown fences. No external commentary. No placeholders.\n"
+                "\n"
+                "=== INTERFACE CONTRACTS ===\n"
+                f"{load_contract_spec()}\n"
+                "\n"
+                "=== CURRENT DIAGNOSTICS ===\n"
+                f"{load_diagnostics_text()}\n"
             )
             lc = file_constraints(path)
             user_prompt = f"""
@@ -3485,6 +3628,18 @@ except Exception as e:
             records.append([int(time.time()) - (rows - i) * 60, price, high, low, price, vol])
             last = price
         return pd.DataFrame(records, columns=["timestamp", "open", "high", "low", "close", "volume"])
+    
+    def _signals_list_to_df(self, signals: List[Dict[str, Any]], market_data: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+        """
+        Convert list-of-dict signals to standardized DataFrame format using SignalAdapter
+        This maintains compatibility with existing strategy outputs while enabling alpha scoring
+        """
+        if not self.signal_adapter:
+            # Fallback if monolith not available
+            logger.warning("⚠️  SignalAdapter not available - cannot convert signals")
+            return pd.DataFrame()
+        
+        return self.signal_adapter.signals_to_dataframe(signals, market_data)
 
     def _create_iteration_project(self, plan: Dict[str, Any], code_files: Dict[str, str]) -> str:
         project_dir = os.path.abspath(f"e22_iteration_{self.iteration_count + 1}")
