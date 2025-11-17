@@ -34,11 +34,11 @@ INTERFACE CONTRACTS
 
 5. Alpha Scoring Formula:
    alpha = 0.35*diversity + 0.40*avg_confidence + 0.25*trade_ratio
-   Base threshold = 0.45
-   If cumulative (LOW_SIGNAL + INTERFACE_ERROR) >= 6 -> lower threshold temporarily to 0.40 until one viable iteration passes.
+   Base threshold = 0.35 (LOWERED FOR AGGRESSIVE TRADING)
+   If cumulative (LOW_SIGNAL + INTERFACE_ERROR) >= 3 -> lower threshold to 0.25 until one viable iteration passes.
 
-6. Diversity Gate:
-   Pass if (signals >= 6) OR (>=2 symbols AND each >=3 signals)
+6. Diversity Gate (LOOSENED FOR MORE TRADES):
+   Pass if (signals >= 3) OR (>=1 symbol AND >=2 signals)
 
 7. Error Taxonomy Tags:
    SYNTAX_ERROR, INTERFACE_ERROR, LOW_SIGNAL, LOW_ALPHA, RUNTIME_FAIL, BACKTEST_FALLBACK, NORMALIZATION_WARN
@@ -56,3 +56,81 @@ INTERFACE CONTRACTS
    - Example usage blocks in orchestrator/strategies.
    - Random synthetic fake OHLCV generation inside core trading logic (except your controlled testing utilities).
    - Removing AdaptiveTradingStrategy class.
+   - Placeholder implementations or TODO comments in production code.
+
+11. SPECIALIZED QUANT AGENT ARCHITECTURE (REQUIRED):
+
+   A. ResearchQuantAgent - Provides academic alpha sources and market intelligence
+      Must implement:
+      - get_alpha_sources() -> List[Dict] with fields:
+        * name: str (alpha source name)
+        * edge: str (exploitable inefficiency)
+        * implementation: str (concrete trading rule)
+        * expected_sharpe: float (backtested Sharpe ratio)
+        * decay_rate: str (how long edge persists)
+      
+      - analyze_market_regime() -> Dict with:
+        * current_regime: str ('low_vol', 'high_vol', 'trending', 'mean_reverting')
+        * recommended_strategies: List[str]
+        * avoid_strategies: List[str]
+      
+      Built-in alpha sources (hardcoded knowledge base):
+        * Volatility Risk Premium (sell options when IV > RV)
+        * Momentum Crash Protection (avoid momentum in rebounds)
+        * Liquidity Provision (market making at bid/ask)
+        * Statistical Arbitrage (cointegration pairs)
+        * Cross-Asset Correlation Breakdowns
+      
+   B. ExecutionQuantAgent - Optimizes trade execution quality
+      Must implement:
+      - optimize_entry(strategy_code: str) -> str
+        Adds: Limit orders, time-weighted scheduling, liquidity seeking
+      
+      - optimize_exit(strategy_code: str) -> str
+        Adds: ATR-based trailing stops, volatility-adjusted targets
+      
+      - reduce_slippage(strategy_code: str) -> str
+        Adds: Volume-weighted execution, avoid high-vol periods
+      
+      - minimize_costs(strategy_code: str) -> str
+        Adds: Batch orders, maker fee rebates, profit thresholds
+   
+   C. RiskQuantAgent - Manages portfolio risk and position sizing
+      Must implement:
+      - calculate_position_sizes(performance: Dict) -> Dict with:
+        * kelly_size: float (Kelly criterion allocation)
+        * risk_parity_size: float (risk-balanced allocation)
+        * vol_target_size: float (volatility targeting)
+      
+      - validate_risk_limits(performance: Dict) -> bool
+        Checks: max_drawdown <= 20%, VaR_95 <= 3%, concentration <= 25%
+      
+      - generate_stress_scenarios() -> Dict
+        Returns: flash_crash, vol_spike, liquidity_crisis scenarios
+
+12. QUANT AGENT INTEGRATION FLOW:
+    
+    Phase 0 (NEW): Research Agent provides alpha sources
+    Phase 1: Reasoner creates plan using researched alphas (not random ideas)
+    Phase 2: Coder implements strategies based on proven edges
+    Phase 2.5 (NEW): Execution Agent optimizes entry/exit/slippage
+    Phase 3: Enforcer tests with realistic constraints
+    Phase 3.5 (NEW): Risk Agent validates position sizing and limits
+    Phase 4: Champion promotion only if risk-approved
+
+13. AGENT DATA SOURCES (NO PLACEHOLDERS):
+    
+    ResearchQuantAgent data sources:
+    - Hardcoded alpha library (20+ proven sources)
+    - Market regime detection from price/volume patterns
+    - No external API calls required (self-contained)
+    
+    ExecutionQuantAgent optimizations:
+    - Pattern-based code transformations (no AI needed)
+    - Deterministic optimization rules
+    - No external dependencies
+    
+    RiskQuantAgent calculations:
+    - Mathematical formulas (Kelly, VaR, Sharpe)
+    - Performance-based position sizing
+    - No external risk feeds needed

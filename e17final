@@ -37,12 +37,13 @@ try:
         DiagnosticsManager,
         PersistenceManager,
         AlphaScorer,
-        DiversityGate
+        DiversityGate,
+        AgentActivityTracker
     )
     MONOLITH_ALPHA_AVAILABLE = True
     logger_pre = logging.getLogger("UltimateTradingBot")
     if logger_pre.hasHandlers():
-        logger_pre.info("✅ Monolith Alpha Engine modules loaded")
+        logger_pre.info("✅ Monolith Alpha Engine modules loaded (with AgentActivityTracker)")
 except ImportError as e:
     MONOLITH_ALPHA_AVAILABLE = False
     print(f"⚠️  Monolith Alpha Engine not available: {e}")
@@ -1535,9 +1536,11 @@ class E22MinTradesEnforcedSystem:
             self.memory_manager = MemoryManager("monolith/training_memory.json")
             self.diagnostics_manager = DiagnosticsManager("monolith/diagnostics.txt")
             self.persistence_manager = PersistenceManager("candidates", "metrics_history.json")
-            self.alpha_scorer = AlphaScorer(base_threshold=0.45, lowered_threshold=0.40)
-            self.diversity_gate = DiversityGate(min_total_signals=6, min_symbols=2, min_signals_per_symbol=3)
-            logger.info("🎯 Monolith Alpha Engine initialized (adaptive learning, alpha scoring, diversity gate)")
+            self.alpha_scorer = AlphaScorer(base_threshold=0.35, lowered_threshold=0.25)  # LOWERED FOR AGGRESSIVE TRADING
+            self.diversity_gate = DiversityGate(min_total_signals=3, min_symbols=1, min_signals_per_symbol=2)  # LOOSENED FOR MORE TRADES
+            self.agent_activity_tracker = AgentActivityTracker("agent_activity.json")
+            self.agent_activity_tracker.load_from_file()  # Load previous activities
+            logger.info("🎯 Monolith Alpha Engine initialized (adaptive learning, alpha scoring, diversity gate, activity tracking)")
         else:
             self.signal_adapter = None
             self.memory_manager = None
@@ -1545,6 +1548,7 @@ class E22MinTradesEnforcedSystem:
             self.persistence_manager = None
             self.alpha_scorer = None
             self.diversity_gate = None
+            self.agent_activity_tracker = None
             logger.warning("⚠️  Monolith Alpha Engine not available - running without adaptive learning")
 
     def _log_phase_progress(self, phase: str, iteration: int, status: str, details: str = ""):

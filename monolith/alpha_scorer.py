@@ -11,8 +11,8 @@ class AlphaScorer:
     
     def __init__(
         self,
-        base_threshold: float = 0.45,
-        lowered_threshold: float = 0.40,
+        base_threshold: float = 0.35,  # LOWERED FOR AGGRESSIVE TRADING
+        lowered_threshold: float = 0.25,  # LOWERED FOR AGGRESSIVE TRADING
         weights: Dict[str, float] = None
     ):
         self.base_threshold = base_threshold

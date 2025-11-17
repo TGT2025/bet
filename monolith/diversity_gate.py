@@ -12,9 +12,9 @@ class DiversityGate:
     
     def __init__(
         self,
-        min_total_signals: int = 6,
-        min_symbols: int = 2,
-        min_signals_per_symbol: int = 3
+        min_total_signals: int = 3,  # LOWERED FOR MORE TRADES
+        min_symbols: int = 1,  # LOWERED FOR MORE TRADES
+        min_signals_per_symbol: int = 2  # LOWERED FOR MORE TRADES
     ):
         self.min_total_signals = min_total_signals
         self.min_symbols = min_symbols
@@ -24,10 +24,10 @@ class DiversityGate:
         """
         Check if signals pass diversity gate
         
-        Criteria:
-        - Pass if len(signals) >= min_total_signals (default 6)
-        - OR if num_symbols >= min_symbols (default 2) AND 
-             each symbol has >= min_signals_per_symbol (default 3)
+        Criteria (LOOSENED FOR AGGRESSIVE TRADING):
+        - Pass if len(signals) >= min_total_signals (default 3)
+        - OR if num_symbols >= min_symbols (default 1) AND 
+             each symbol has >= min_signals_per_symbol (default 2)
         
         Args:
             signals: List of signal dicts

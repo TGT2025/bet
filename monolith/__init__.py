@@ -9,6 +9,7 @@ from .diagnostics_manager import DiagnosticsManager
 from .persistence import PersistenceManager
 from .alpha_scorer import AlphaScorer
 from .diversity_gate import DiversityGate
+from .agent_activity_tracker import AgentActivityTracker
 
 __all__ = [
     'SignalAdapter',
@@ -17,4 +18,5 @@ __all__ = [
     'PersistenceManager',
     'AlphaScorer',
     'DiversityGate',
+    'AgentActivityTracker',
 ]
