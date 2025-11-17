@@ -2354,6 +2354,61 @@ async def get_health():
         "timestamp": datetime.now().isoformat()
     }
 
+@app.get("/api/agent-dashboard")
+async def get_agent_dashboard():
+    """Get complete agent dashboard data for frontend - includes all agent thoughts, reasoning, and activities"""
+    # Import AgentActivityTracker
+    try:
+        from monolith import AgentActivityTracker
+        # Try to load from file
+        tracker = AgentActivityTracker("agent_activity.json")
+        dashboard_data = tracker.get_frontend_dashboard_data()
+        return dashboard_data
+    except Exception as e:
+        # Fallback - return structure with error message
+        return {
+            "error": f"AgentActivityTracker not available: {e}",
+            "agent_status": {},
+            "recent_activities": [],
+            "latest_strategy": {},
+            "latest_iteration": {},
+            "agent_thoughts_summary": {},
+            "total_iterations": 0,
+            "total_activities": 0
+        }
+
+@app.get("/api/agent-status")
+async def get_agent_status():
+    """Get current status of all agents"""
+    try:
+        from monolith import AgentActivityTracker
+        tracker = AgentActivityTracker("agent_activity.json")
+        return {"agents": tracker.get_agent_status()}
+    except Exception as e:
+        return {"error": f"AgentActivityTracker not available: {e}", "agents": {}}
+
+@app.get("/api/agent-thoughts")
+async def get_agent_thoughts():
+    """Get recent thoughts from all agents"""
+    try:
+        from monolith import AgentActivityTracker
+        tracker = AgentActivityTracker("agent_activity.json")
+        thoughts = tracker.get_recent_thoughts(limit=50)
+        return {"thoughts": thoughts, "total": len(thoughts)}
+    except Exception as e:
+        return {"error": f"AgentActivityTracker not available: {e}", "thoughts": [], "total": 0}
+
+@app.get("/api/agent-suggestions")
+async def get_agent_suggestions():
+    """Get recent suggestions from all agents"""
+    try:
+        from monolith import AgentActivityTracker
+        tracker = AgentActivityTracker("agent_activity.json")
+        suggestions = tracker.get_recent_suggestions(limit=50)
+        return {"suggestions": suggestions, "total": len(suggestions)}
+    except Exception as e:
+        return {"error": f"AgentActivityTracker not available: {e}", "suggestions": [], "total": 0}
+
 # WebSocket connection manager
 class ConnectionManager:
     def __init__(self):
@@ -2589,6 +2644,76 @@ if __name__ == "__main__":
                 'total_activities': len(system.monitoring_agent.agent_activities)
             })
         
+        @app.route('/api/agent-dashboard')
+        def agent_dashboard():
+            """Get complete agent dashboard data for frontend - includes all agent thoughts, reasoning, and activities"""
+            try:
+                if MONOLITH_ALPHA_AVAILABLE:
+                    tracker = system.agent_activity_tracker
+                    dashboard_data = tracker.get_frontend_dashboard_data()
+                    return jsonify(dashboard_data)
+                else:
+                    # Fallback to basic agent data
+                    return jsonify({
+                        "error": "Monolith Alpha Engine not available",
+                        "agent_status": {},
+                        "recent_activities": system.monitoring_agent.agent_activities[-50:],
+                        "latest_strategy": {},
+                        "latest_iteration": {},
+                        "agent_thoughts_summary": {},
+                        "total_iterations": system.iteration_count,
+                        "total_activities": len(system.monitoring_agent.agent_activities)
+                    })
+            except Exception as e:
+                return jsonify({
+                    "error": f"Error retrieving dashboard data: {str(e)}",
+                    "agent_status": {},
+                    "recent_activities": [],
+                    "latest_strategy": {},
+                    "latest_iteration": {},
+                    "agent_thoughts_summary": {},
+                    "total_iterations": 0,
+                    "total_activities": 0
+                })
+        
+        @app.route('/api/agent-status')
+        def agent_status():
+            """Get current status of all agents"""
+            try:
+                if MONOLITH_ALPHA_AVAILABLE:
+                    tracker = system.agent_activity_tracker
+                    return jsonify({"agents": tracker.get_agent_status()})
+                else:
+                    return jsonify({"error": "Monolith Alpha Engine not available", "agents": {}})
+            except Exception as e:
+                return jsonify({"error": f"Error retrieving agent status: {str(e)}", "agents": {}})
+        
+        @app.route('/api/agent-thoughts')
+        def agent_thoughts():
+            """Get recent thoughts from all agents"""
+            try:
+                if MONOLITH_ALPHA_AVAILABLE:
+                    tracker = system.agent_activity_tracker
+                    thoughts = tracker.get_recent_thoughts(limit=50)
+                    return jsonify({"thoughts": thoughts, "total": len(thoughts)})
+                else:
+                    return jsonify({"error": "Monolith Alpha Engine not available", "thoughts": [], "total": 0})
+            except Exception as e:
+                return jsonify({"error": f"Error retrieving thoughts: {str(e)}", "thoughts": [], "total": 0})
+        
+        @app.route('/api/agent-suggestions')
+        def agent_suggestions():
+            """Get recent suggestions from all agents"""
+            try:
+                if MONOLITH_ALPHA_AVAILABLE:
+                    tracker = system.agent_activity_tracker
+                    suggestions = tracker.get_recent_suggestions(limit=50)
+                    return jsonify({"suggestions": suggestions, "total": len(suggestions)})
+                else:
+                    return jsonify({"error": "Monolith Alpha Engine not available", "suggestions": [], "total": 0})
+            except Exception as e:
+                return jsonify({"error": f"Error retrieving suggestions: {str(e)}", "suggestions": [], "total": 0})
+        
         @app.route('/api/metrics')
         def metrics():
             """Return performance metrics"""
@@ -2671,6 +2796,22 @@ if __name__ == "__main__":
                 <div class="endpoint">
                     <strong><a href="/api/agents">/api/agents</a></strong>
                     - Agent activity and suggestions
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/agent-dashboard">/api/agent-dashboard</a></strong>
+                    - 🆕 Complete agent dashboard with all thoughts, reasoning, and activities
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/agent-status">/api/agent-status</a></strong>
+                    - 🆕 Current status of all agents
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/agent-thoughts">/api/agent-thoughts</a></strong>
+                    - 🆕 Recent thoughts from all agents
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/agent-suggestions">/api/agent-suggestions</a></strong>
+                    - 🆕 Recent suggestions from all agents
                 </div>
                 <div class="endpoint">
                     <strong><a href="/api/metrics">/api/metrics</a></strong>
@@ -3120,6 +3261,14 @@ if __name__ == "__main__":
                     "timestamp": datetime.now().isoformat(),
                     "consecutive_failures": consecutive_failures,
                     "error_type": type(e).__name__
+                })
+                
+                # Mark iteration as failed in monitoring
+                self.monitoring_agent.capture_iteration_end(iteration, {
+                    "status": "exception_caught",
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                    "consecutive_failures": consecutive_failures
                 })
                 
                 # 🎯 MONOLITH ALPHA ENGINE: Track failures
