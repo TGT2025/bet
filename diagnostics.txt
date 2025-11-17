@@ -1,0 +1,19 @@
+# DIAGNOSTICS (seed – will be auto-generated)
+timestamp: INIT
+iteration: 0
+
+recent_failures:
+  - None
+
+failure_frequencies:
+  None
+
+active_adaptations:
+  None
+
+notes:
+  - Contracts enforced.
+  - Await first iteration to populate diagnostics.
+
+# MANUAL_NOTES_START
+  - You can add manual overrides here; preserved across updates.
