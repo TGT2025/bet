@@ -3020,6 +3020,42 @@ if __name__ == "__main__":
 
                 self._log_phase_progress("alpha_hunting", iteration, "complete", f"Completed iteration {iteration}")
                 
+                # 🎯 MONOLITH ALPHA ENGINE: Update adaptive memory and diagnostics
+                if MONOLITH_ALPHA_AVAILABLE and self.memory_manager and self.diagnostics_manager:
+                    try:
+                        # Determine iteration status and failures
+                        iteration_failures = []
+                        status = 'unknown'
+                        alpha_score = 0.0
+                        
+                        if not viable:
+                            iteration_failures.append('LOW_ALPHA')
+                            status = 'low_alpha'
+                        elif not startup_ok:
+                            iteration_failures.append('RUNTIME_FAIL')
+                            status = 'runtime_fail'
+                        elif self._is_champion_material(performance_data):
+                            status = 'viable'
+                            alpha_score = 0.7  # Champion-level
+                        else:
+                            status = 'completed_no_champion'
+                            alpha_score = 0.5  # Decent but not champion
+                        
+                        # Update memory
+                        self._update_adaptive_memory(
+                            failures=iteration_failures,
+                            alpha_score=alpha_score,
+                            metrics=performance_data,
+                            status=status
+                        )
+                        
+                        # Rewrite diagnostics for next iteration
+                        self._rewrite_diagnostics(iteration_failures)
+                        
+                        alpha_hunter_logger.info("🧠 Monolith: Memory and diagnostics updated")
+                    except Exception as e:
+                        alpha_hunter_logger.warning(f"⚠️  Monolith update failed: {e}")
+                
                 # 💾 P2: Save checkpoint after successful iteration
                 alpha_hunter_logger.info("💾 Saving checkpoint...")
                 checkpoint_state = {
@@ -3081,6 +3117,31 @@ if __name__ == "__main__":
                     "consecutive_failures": consecutive_failures,
                     "error_type": type(e).__name__
                 })
+                
+                # 🎯 MONOLITH ALPHA ENGINE: Track failures
+                if MONOLITH_ALPHA_AVAILABLE and self.memory_manager and self.diagnostics_manager:
+                    try:
+                        # Classify error type
+                        error_tag = 'RUNTIME_FAIL'
+                        if 'Syntax' in type(e).__name__ or 'syntax' in str(e).lower():
+                            error_tag = 'SYNTAX_ERROR'
+                        elif 'Import' in type(e).__name__ or 'import' in str(e).lower():
+                            error_tag = 'INTERFACE_ERROR'
+                        
+                        # Update memory
+                        self._update_adaptive_memory(
+                            failures=[error_tag],
+                            alpha_score=0.0,
+                            metrics={'error': str(e)},
+                            status='failed'
+                        )
+                        
+                        # Rewrite diagnostics
+                        self._rewrite_diagnostics([f"{error_tag}: {str(e)[:100]}"])
+                        
+                        error_logger.info("🧠 Monolith: Failure tracked for adaptive learning")
+                    except Exception as me:
+                        error_logger.warning(f"⚠️  Monolith update failed: {me}")
                 
                 # 💗 P2: Update heartbeat with error count
                 self.heartbeat_monitor.update_stats(
