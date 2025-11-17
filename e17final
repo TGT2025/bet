@@ -371,11 +371,12 @@ class SyntaxGuard:
 # =========================================================================================
 
 class EnhancedCodeValidator:
-    """4-stage validation pipeline for generated code"""
+    """5-stage validation pipeline for generated code with monolith alpha engine support"""
     
     @staticmethod
-    def validate_generated_code(code: str, filename: str, requirements: List[str]) -> Tuple[bool, str]:
-        """Enhanced 4-stage validation pipeline"""
+    def validate_generated_code(code: str, filename: str, requirements: List[str], 
+                               signal_adapter=None) -> Tuple[bool, str]:
+        """Enhanced 5-stage validation pipeline"""
         import ast
         import tempfile
         
@@ -383,7 +384,7 @@ class EnhancedCodeValidator:
         try:
             ast.parse(code)
         except SyntaxError as e:
-            return False, f"Syntax Error: {e}"
+            return False, f"SYNTAX_ERROR: {e}"
         
         # Stage 2: Import Test
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
@@ -396,15 +397,16 @@ class EnhancedCodeValidator:
             spec.loader.exec_module(module)
         except Exception as e:
             os.unlink(temp_file)
-            return False, f"Import Error: {e}"
+            return False, f"INTERFACE_ERROR: Import failed - {e}"
         
         # Stage 3: Contract Validation
         for req in requirements:
             if not hasattr(module, req):
                 os.unlink(temp_file)
-                return False, f"Missing Requirement: {req}"
+                return False, f"INTERFACE_ERROR: Missing {req}"
         
         # Stage 4: Runtime Validation (if applicable)
+        signals = None
         if "generate_signals" in requirements and hasattr(module, "AdaptiveTradingStrategy"):
             try:
                 # Create synthetic test data
@@ -427,13 +429,36 @@ class EnhancedCodeValidator:
                 strat = module.AdaptiveTradingStrategy()
                 signals = strat.generate_signals(test_data)
                 if not isinstance(signals, list):
-                    return False, "Runtime Error: Signals must return list"
+                    os.unlink(temp_file)
+                    return False, "RUNTIME_FAIL: Signals must return list"
             except Exception as e:
                 os.unlink(temp_file)
-                return False, f"Runtime Error: {e}"
+                return False, f"RUNTIME_FAIL: {e}"
+        
+        # Stage 5: Conversion Test (NEW - Monolith Alpha Engine)
+        if signal_adapter and signals:
+            try:
+                # Validate signals are convertible
+                success, error_msg = signal_adapter.validate_convertible(signals)
+                if not success:
+                    os.unlink(temp_file)
+                    return False, f"INTERFACE_ERROR: Signal conversion failed - {error_msg}"
+                
+                # Test actual conversion (reuse test_data from Stage 4)
+                signals_df = signal_adapter.signals_to_dataframe(signals, test_data if 'test_data' in locals() else {})
+                
+                if signals_df is None or len(signals_df) == 0:
+                    # This is acceptable if signals were empty
+                    if signals:
+                        os.unlink(temp_file)
+                        return False, "INTERFACE_ERROR: Signal adapter produced empty DataFrame from non-empty signals"
+                        
+            except Exception as e:
+                os.unlink(temp_file)
+                return False, f"INTERFACE_ERROR: Signal adapter exception - {e}"
         
         os.unlink(temp_file)
-        return True, "All validation stages passed"
+        return True, "All 5 validation stages passed"
 
 # =========================================================================================
 # 🎯 CRITICAL FIX 2: DYNAMIC TEMPERATURE STAGING SYSTEM
@@ -3640,6 +3665,54 @@ except Exception as e:
             return pd.DataFrame()
         
         return self.signal_adapter.signals_to_dataframe(signals, market_data)
+    
+    def _update_adaptive_memory(self, failures: List[str], alpha_score: float, metrics: Dict[str, Any], status: str = 'unknown'):
+        """
+        Update persistent training memory after each iteration
+        Uses MemoryManager to track failures, alpha scores, and learning history
+        """
+        if not self.memory_manager:
+            return
+        
+        iteration_data = {
+            'failures': failures,
+            'alpha_score': alpha_score,
+            'metrics': metrics,
+            'status': status
+        }
+        
+        self.memory_manager.update_iteration(iteration_data)
+        alpha_logger = logging.getLogger("Bot.ALPHA-ENGINE")
+        alpha_logger.info(f"🧠 Memory updated: iteration={self.memory_manager.state['iterations']}, alpha={alpha_score:.3f}, status={status}")
+    
+    def _rewrite_diagnostics(self, iteration_failures: List[str] = None):
+        """
+        Auto-generate updated diagnostics file with current failure patterns and adaptations
+        Uses DiagnosticsManager to create context for next LLM prompts
+        """
+        if not self.diagnostics_manager or not self.memory_manager:
+            return
+        
+        iteration_failures = iteration_failures or []
+        
+        # Get current state from memory
+        failure_frequencies = self.memory_manager.state.get('failure_counts', {})
+        recent_failures = self.memory_manager.state.get('recent_failures', [])
+        
+        # Generate adaptation hints
+        active_adaptations = self.diagnostics_manager.get_active_adaptations(failure_frequencies)
+        
+        # Update diagnostics file
+        self.diagnostics_manager.update_diagnostics(
+            iteration=self.iteration_count,
+            recent_failures=recent_failures,
+            failure_frequencies=failure_frequencies,
+            active_adaptations=active_adaptations,
+            additional_notes=None
+        )
+        
+        diag_logger = logging.getLogger("Bot.DIAGNOSTICS")
+        diag_logger.info(f"📝 Diagnostics updated: {len(recent_failures)} recent failures, {len(active_adaptations)} active adaptations")
 
     def _create_iteration_project(self, plan: Dict[str, Any], code_files: Dict[str, str]) -> str:
         project_dir = os.path.abspath(f"e22_iteration_{self.iteration_count + 1}")
