@@ -149,14 +149,14 @@ class AgentActivityTracker:
             }
             self.agent_thinking.append(thinking_record)
             
-            # Track as activity
-            self.track_activity(
-                agent_name=agent_name,
-                action='thinking',
-                details={'thought': thought, 'context': context}
-            )
-            
             logger.debug(f"💭 {agent_name}: {thought[:100]}...")
+        
+        # Track as activity (outside lock to avoid deadlock)
+        self.track_activity(
+            agent_name=agent_name,
+            action='thinking',
+            details={'thought': thought, 'context': context}
+        )
     
     def log_agent_suggestion(
         self,
@@ -187,14 +187,14 @@ class AgentActivityTracker:
             }
             self.agent_suggestions.append(suggestion_record)
             
-            # Track as activity
-            self.track_activity(
-                agent_name=agent_name,
-                action='suggestion',
-                details={'type': suggestion_type, 'suggestion': suggestion, 'priority': priority}
-            )
-            
             logger.debug(f"💡 {agent_name} suggestion ({suggestion_type})")
+        
+        # Track as activity (outside lock to avoid deadlock)
+        self.track_activity(
+            agent_name=agent_name,
+            action='suggestion',
+            details={'type': suggestion_type, 'suggestion': suggestion, 'priority': priority}
+        )
     
     def log_strategy_info(
         self,
@@ -639,18 +639,42 @@ class AgentActivityTracker:
     def export_summary(self) -> Dict[str, Any]:
         """Export comprehensive summary of all tracked data"""
         with self._lock:
-            return {
-                'total_activities': len(self.activities),
-                'total_thoughts': len(self.agent_thinking),
-                'total_suggestions': len(self.agent_suggestions),
-                'total_strategies': len(self.strategy_info),
-                'agents': {
-                    agent: self.get_agent_summary(agent)
-                    for agent in self.agent_stats.keys()
-                },
-                'recommendations': self.get_adaptive_recommendations(),
-                'timestamp': datetime.now().isoformat()
-            }
+            # Get basic counts
+            total_activities = len(self.activities)
+            total_thoughts = len(self.agent_thinking)
+            total_suggestions = len(self.agent_suggestions)
+            total_strategies = len(self.strategy_info)
+            
+            # Get agent summaries inline to avoid nested locking
+            agents = {}
+            for agent, stats in self.agent_stats.items():
+                total = stats['total_actions']
+                if total == 0:
+                    agents[agent] = {'agent': agent, 'no_activity': True}
+                else:
+                    success_rate = stats['success_count'] / total if total > 0 else 0.0
+                    agents[agent] = {
+                        'agent': agent,
+                        'total_actions': total,
+                        'action_breakdown': dict(stats['action_counts']),
+                        'success_rate': success_rate,
+                        'success_count': stats['success_count'],
+                        'failure_count': stats['failure_count'],
+                        'last_activity': stats['last_activity'].isoformat() if stats['last_activity'] else None
+                    }
+        
+        # Get recommendations outside lock
+        recommendations = self.get_adaptive_recommendations()
+        
+        return {
+            'total_activities': total_activities,
+            'total_thoughts': total_thoughts,
+            'total_suggestions': total_suggestions,
+            'total_strategies': total_strategies,
+            'agents': agents,
+            'recommendations': recommendations,
+            'timestamp': datetime.now().isoformat()
+        }
 
 
 # Singleton instance
