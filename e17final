@@ -2545,7 +2545,7 @@ if __name__ == "__main__":
         # =====================================================================
         try:
             from monolith import get_tracker_instance
-            from monolith_api_endpoints import register_monolith_endpoints
+            from monolith.monolith_api_endpoints import register_monolith_endpoints
             
             # Initialize or get existing tracker instance
             activity_tracker = get_tracker_instance()
