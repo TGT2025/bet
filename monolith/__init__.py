@@ -277,7 +277,19 @@ INTERFACE CONTRACTS
 
 # Version information
 __version__ = "1.0.0"
-__all__ = []
+
+# Import agent activity tracker for persistent memory
+from .agent_activity_tracker import (
+    AgentActivityTracker,
+    ActivityRecord,
+    get_tracker_instance
+)
+
+__all__ = [
+    'AgentActivityTracker',
+    'ActivityRecord',
+    'get_tracker_instance'
+]
 
 # This module serves as documentation and interface specification
 # Actual implementation classes should be imported from submodules
