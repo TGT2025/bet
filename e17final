@@ -2509,10 +2509,70 @@ if __name__ == "__main__":
                     - Checkpoint management
                 </div>
                 
+                <h3>🧠 Monolith Alpha Engine Endpoints:</h3>
+                <div class="endpoint">
+                    <strong><a href="/api/monolith/dashboard_data">/api/monolith/dashboard_data</a></strong>
+                    - Complete dashboard data (trial trades, agent thoughts, recommendations)
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/monolith/trial_trades">/api/monolith/trial_trades</a></strong>
+                    - Trial trades before champion selection
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/monolith/agent_thoughts">/api/monolith/agent_thoughts</a></strong>
+                    - Agent reasoning with context
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/monolith/agent_status">/api/monolith/agent_status</a></strong>
+                    - Individual agent status cards
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/monolith/strategy_breakdown">/api/monolith/strategy_breakdown</a></strong>
+                    - Strategy details with alpha sources
+                </div>
+                <div class="endpoint">
+                    <strong><a href="/api/monolith/iteration_summary">/api/monolith/iteration_summary</a></strong>
+                    - Complete iteration summaries
+                </div>
+                
                 <p><em>🔄 Auto-refresh or call endpoints for real-time data</em></p>
             </body>
             </html>
             """
+        
+        # =====================================================================
+        # MONOLITH ALPHA ENGINE INTEGRATION
+        # =====================================================================
+        try:
+            from monolith import get_tracker_instance
+            from monolith_api_endpoints import register_monolith_endpoints
+            
+            # Initialize or get existing tracker instance
+            activity_tracker = get_tracker_instance()
+            
+            # Register Monolith endpoints with the Flask app
+            register_monolith_endpoints(app, system, activity_tracker)
+            
+            # Store tracker reference in system for agent use
+            system.activity_tracker = activity_tracker
+            
+            monitoring_logger.info("✅ Monolith Alpha Engine integrated successfully")
+            monitoring_logger.info("📊 New endpoints available:")
+            monitoring_logger.info("   - /api/monolith/trial_trades")
+            monitoring_logger.info("   - /api/monolith/agent_thoughts")
+            monitoring_logger.info("   - /api/monolith/agent_suggestions")
+            monitoring_logger.info("   - /api/monolith/agent_status")
+            monitoring_logger.info("   - /api/monolith/strategy_breakdown")
+            monitoring_logger.info("   - /api/monolith/iteration_summary")
+            monitoring_logger.info("   - /api/monolith/dashboard_data")
+        except ImportError as e:
+            monitoring_logger.warning(f"⚠️ Monolith Alpha Engine not available: {e}")
+            monitoring_logger.warning("   Running without adaptive learning features")
+            system.activity_tracker = None
+        except Exception as e:
+            monitoring_logger.error(f"❌ Monolith integration error: {e}")
+            system.activity_tracker = None
+        # =====================================================================
         
         def run_flask():
             try:
