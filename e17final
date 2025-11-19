@@ -548,14 +548,42 @@ class MonitoringAgent:
             'strategy_code': strategy_code,
             'active': True,
             'total_trades': 0,
-            'current_pnl': 0.0
+            'trades_today': 0,
+            'last_reset_date': datetime.now().date(),
+            'current_pnl': 0.0,
+            'recent_trades': []  # Store last 50 trades
         }
     
     def update_champion_performance(self, champion_id: str, trade_data: Dict):
-        """Update champion performance with trade data"""
-        if champion_id in self.champion_tracker:
-            self.champion_tracker[champion_id]['total_trades'] += 1
-            self.champion_tracker[champion_id]['current_pnl'] += trade_data.get('pnl', 0.0)
+        """Update champion performance with trade data - FIXED to track properly"""
+        if champion_id not in self.champion_tracker:
+            return
+        
+        champion = self.champion_tracker[champion_id]
+        
+        # Reset daily counter if new day
+        today = datetime.now().date()
+        if champion.get('last_reset_date') != today:
+            champion['trades_today'] = 0
+            champion['last_reset_date'] = today
+        
+        # Update with actual trade count from performance data
+        new_trades = trade_data.get('trades', 0)
+        previous_total = champion.get('total_trades', 0)
+        trades_delta = new_trades if new_trades > previous_total else 0
+        
+        champion['total_trades'] = max(champion['total_trades'], new_trades)
+        champion['trades_today'] += trades_delta
+        champion['current_pnl'] += trade_data.get('pnl', 0.0)
+        
+        # Add to recent trades (keep last 50)
+        if trades_delta > 0:
+            champion.setdefault('recent_trades', []).append({
+                'timestamp': datetime.now().isoformat(),
+                'count': trades_delta,
+                'pnl': trade_data.get('pnl', 0.0)
+            })
+            champion['recent_trades'] = champion['recent_trades'][-50:]
     
     def get_dashboard_data(self) -> Dict:
         """Get comprehensive dashboard data"""
@@ -567,6 +595,7 @@ class MonitoringAgent:
             'recent_agent_activities': self.agent_activities[-50:],
             'iteration_summaries': self._summarize_iterations(),
             'champion_performance': self._get_champion_performance(),
+            'recent_trades': self._get_recent_trades(),  # NEW: Add recent trades
             'system_health': self._get_system_health()
         }
     
@@ -589,7 +618,7 @@ class MonitoringAgent:
         return summaries
     
     def _get_champion_performance(self) -> List[Dict]:
-        """Get champion performance data"""
+        """Get champion performance data - ENHANCED with trades_today"""
         performance = []
         for champ_id, data in self.champion_tracker.items():
             perf_data = {
@@ -597,11 +626,27 @@ class MonitoringAgent:
                 'created_at': data['created_at'].isoformat() if isinstance(data['created_at'], datetime) else str(data['created_at']),
                 'active': data.get('active', False),
                 'total_trades': data.get('total_trades', 0),
+                'trades_today': data.get('trades_today', 0),  # NEW: Add trades today
                 'current_pnl': data.get('current_pnl', 0.0),
                 'performance': data.get('performance', {})
             }
             performance.append(perf_data)
         return performance
+    
+    def _get_recent_trades(self) -> List[Dict]:
+        """Get recent trades across all champions - NEW METHOD"""
+        all_trades = []
+        for champ_id, data in self.champion_tracker.items():
+            for trade in data.get('recent_trades', []):
+                all_trades.append({
+                    'champion_id': champ_id,
+                    'timestamp': trade['timestamp'],
+                    'count': trade['count'],
+                    'pnl': trade['pnl']
+                })
+        # Sort by timestamp descending, return last 100
+        all_trades.sort(key=lambda x: x['timestamp'], reverse=True)
+        return all_trades[:100]
     
     def _get_system_health(self) -> Dict:
         """Get system health status"""
