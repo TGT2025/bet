@@ -1,0 +1,925 @@
+11-19 05:36:22 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 3
+2025-11-19 05:36:22 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 05:36:22 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_48
+2025-11-19 05:36:22 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 05:36:22 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 05:36:25 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'columns'; falling back to simple PnL sim.
+2025-11-19 05:36:25 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+--
+2025-11-19 05:39:06 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 05:45:16 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 05:45:16 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 05:46:42 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: whale_hunter_agent.py
+2025-11-19 05:48:06 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 05:49:20 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 05:50:26 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 4 agent files in 309.4s
+2025-11-19 05:50:26 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 05:51:37 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 13 files in 750.8s
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 13 files, 3,462 lines total
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 38 lines
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 307 lines
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 162 lines
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 254 lines
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 233 lines
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 192 lines
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 237 lines
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 315 lines
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 233 lines
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • whale_hunter_agent.py: 395 lines
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 411 lines
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 339 lines
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 346 lines
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 05:51:37 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 05:51:37 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 05:51:37 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 05:51:37 | WARNING  | UltimateTradingBot        | Mini-backtest error: invalid syntax (alpha_orchestrator.py, line 336)
+2025-11-19 05:51:37 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 05:51:37 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 05:52:28 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 05:52:28 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 05:52:29 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 05:52:29 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_49
+2025-11-19 05:52:29 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 05:52:29 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 05:52:31 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'index'; falling back to simple PnL sim.
+2025-11-19 05:52:31 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 05:52:31 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 05:52:31 | INFO     | Bot.ENFORCER              | 🎯 STRATEGY_VIABLE: 2 signals | 120 trades
+2025-11-19 05:52:31 | INFO     | Bot.ENFORCER              | 🎯 ALPHA-VALIDATION: Checking strategy sophistication
+2025-11-19 05:52:31 | INFO     | Bot.ENFORCER              | 🎯 ALPHA_VALIDATION_PASSED: score 0.30
+2025-11-19 05:52:31 | INFO     | Bot.ALPHA-HUNTER          | ✅ Strategy VIABLE - alpha score meets threshold
+--
+2025-11-19 05:55:18 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 06:03:29 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 06:03:29 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 06:05:19 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: whale_hunter_agent.py
+2025-11-19 06:07:18 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 06:08:57 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 06:10:23 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 4 agent files in 413.5s
+2025-11-19 06:10:23 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 06:11:45 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 13 files in 987.2s
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 13 files, 3,549 lines total
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 193 lines
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 272 lines
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 174 lines
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 216 lines
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 260 lines
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 281 lines
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 308 lines
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 310 lines
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 35 lines
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • whale_hunter_agent.py: 388 lines
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 401 lines
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 356 lines
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 355 lines
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 06:11:45 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 06:11:45 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 06:11:45 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 06:11:45 | WARNING  | UltimateTradingBot        | Mini-backtest error: invalid syntax (strategies.py, line 290)
+2025-11-19 06:11:45 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 06:11:45 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 06:12:44 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 06:12:44 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 06:12:45 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 1 < 2
+2025-11-19 06:12:45 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 2 - Mini-backtest only 1 signals
+2025-11-19 06:13:51 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 06:13:51 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 3
+2025-11-19 06:13:51 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 06:13:51 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_50
+2025-11-19 06:13:51 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 06:13:51 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 06:13:53 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 06:13:53 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 06:13:53 | INFO     | Bot.ENFORCER              | 🎯 STRATEGY_VIABLE: 2 signals | 100 trades
+--
+2025-11-19 06:18:34 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 06:26:38 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 06:26:38 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 06:28:24 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: whale_hunter_agent.py
+2025-11-19 06:30:05 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 06:31:22 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 06:32:42 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 4 agent files in 363.3s
+2025-11-19 06:32:42 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 06:33:51 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 13 files in 916.9s
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 13 files, 3,158 lines total
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 37 lines
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 234 lines
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 238 lines
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 250 lines
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 150 lines
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 147 lines
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 218 lines
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 362 lines
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 215 lines
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • whale_hunter_agent.py: 362 lines
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 340 lines
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 252 lines
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 353 lines
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 06:33:51 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 06:33:51 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 06:33:51 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 06:33:52 | WARNING  | UltimateTradingBot        | Mini-backtest error: cannot import name 'AdaptiveTradingStrategy' from 'strategies' (/root/KEEP_SAFE/v1/e22_iteration_51/strategies.py)
+2025-11-19 06:33:52 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 06:33:52 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 06:35:15 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 06:35:15 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 06:35:15 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 1 < 2
+2025-11-19 06:35:15 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 2 - Mini-backtest only 1 signals
+2025-11-19 06:35:55 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 06:35:55 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 3
+2025-11-19 06:35:55 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 1 < 2
+2025-11-19 06:35:55 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 3 - Mini-backtest only 1 signals
+2025-11-19 06:37:16 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 06:37:16 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 4
+2025-11-19 06:37:16 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 06:37:16 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_51
+2025-11-19 06:37:16 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+--
+2025-11-19 06:42:28 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 06:53:03 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 06:53:03 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 06:55:20 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: whale_hunter_agent.py
+2025-11-19 06:57:24 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 06:58:54 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 07:00:14 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 4 agent files in 431.7s
+2025-11-19 07:00:14 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 07:01:56 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 13 files in 1168.7s
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 13 files, 3,566 lines total
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 61 lines
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 337 lines
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 231 lines
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 228 lines
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 183 lines
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 200 lines
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 350 lines
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 286 lines
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 283 lines
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • whale_hunter_agent.py: 433 lines
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 384 lines
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 270 lines
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 320 lines
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 07:01:56 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 07:01:56 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 07:01:56 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 07:01:56 | WARNING  | UltimateTradingBot        | Mini-backtest error: invalid syntax (strategies.py, line 314)
+2025-11-19 07:01:56 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 07:01:56 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 07:03:14 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 07:03:14 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 07:03:14 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 07:03:14 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_52
+2025-11-19 07:03:14 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 07:03:14 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 07:03:16 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'index'; falling back to simple PnL sim.
+2025-11-19 07:03:16 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 07:03:16 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 07:03:16 | INFO     | Bot.ENFORCER              | 🎯 STRATEGY_VIABLE: 2 signals | 80 trades
+2025-11-19 07:03:16 | INFO     | Bot.ENFORCER              | 🎯 ALPHA-VALIDATION: Checking strategy sophistication
+2025-11-19 07:03:16 | INFO     | Bot.ENFORCER              | 🎯 ALPHA_VALIDATION_PASSED: score 0.30
+2025-11-19 07:03:16 | INFO     | Bot.ALPHA-HUNTER          | ✅ Strategy VIABLE - alpha score meets threshold
+--
+2025-11-19 07:09:27 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 07:21:06 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 07:21:06 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 07:23:40 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: whale_hunter_agent.py
+2025-11-19 07:25:31 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 07:27:10 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 07:28:45 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 4 agent files in 459.2s
+2025-11-19 07:28:45 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 07:30:25 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 13 files in 1258.5s
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 13 files, 3,405 lines total
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 55 lines
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 327 lines
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 186 lines
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 280 lines
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 130 lines
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 186 lines
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 294 lines
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 274 lines
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 286 lines
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • whale_hunter_agent.py: 393 lines
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 352 lines
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 291 lines
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 351 lines
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 07:30:25 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 07:30:25 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 07:30:25 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 07:30:25 | WARNING  | UltimateTradingBot        | Mini-backtest error: invalid syntax (alpha_orchestrator.py, line 336)
+2025-11-19 07:30:25 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 07:30:25 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 07:31:21 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 07:31:21 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 07:31:21 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 07:31:21 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_53
+2025-11-19 07:31:21 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 07:31:21 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 07:31:23 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'index'; falling back to simple PnL sim.
+2025-11-19 07:31:23 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 07:31:23 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 07:31:23 | INFO     | Bot.ENFORCER              | 🎯 STRATEGY_VIABLE: 2 signals | 100 trades
+2025-11-19 07:31:23 | INFO     | Bot.ENFORCER              | 🎯 ALPHA-VALIDATION: Checking strategy sophistication
+2025-11-19 07:31:23 | INFO     | Bot.ENFORCER              | 🎯 ALPHA_VALIDATION_PASSED: score 0.30
+2025-11-19 07:31:23 | INFO     | Bot.ALPHA-HUNTER          | ✅ Strategy VIABLE - alpha score meets threshold
+--
+2025-11-19 07:36:48 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 07:48:10 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 07:48:10 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 07:50:46 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: whale_hunter_agent.py
+2025-11-19 07:53:36 | ERROR    | Bot.AGENT-DESIGNER        | ❌ AGENT_INVALID: liquidity_miner_agent.py - liquidity_miner_agent.py syntax error: unterminated f-string literal (detected at line 458) (<unknown>, line 458)
+2025-11-19 07:55:36 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 07:57:27 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 3 agent files in 557.2s
+2025-11-19 07:57:27 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 07:59:45 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 12 files in 1376.5s
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 12 files, 3,090 lines total
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 34 lines
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 368 lines
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 258 lines
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 216 lines
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 218 lines
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 177 lines
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 207 lines
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 284 lines
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 274 lines
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • whale_hunter_agent.py: 413 lines
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 304 lines
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 337 lines
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 07:59:45 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 07:59:45 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 07:59:45 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 07:59:45 | WARNING  | UltimateTradingBot        | Mini-backtest error: cannot import name 'AdaptiveTradingStrategy' from 'strategies' (/root/KEEP_SAFE/v1/e22_iteration_54/strategies.py)
+2025-11-19 07:59:45 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 07:59:45 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 08:00:38 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 08:00:38 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 08:00:39 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 1 < 2
+2025-11-19 08:00:39 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 2 - Mini-backtest only 1 signals
+2025-11-19 08:01:51 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 08:01:51 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 3
+2025-11-19 08:01:51 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 08:01:51 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_54
+2025-11-19 08:01:51 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 08:01:51 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 08:01:53 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'high'; falling back to simple PnL sim.
+2025-11-19 08:01:53 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 08:01:53 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 08:01:53 | INFO     | Bot.ENFORCER              | 🎯 STRATEGY_VIABLE: 2 signals | 80 trades
+--
+2025-11-19 08:06:09 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 08:16:51 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 08:16:51 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 08:19:38 | ERROR    | Bot.AGENT-DESIGNER        | ❌ AGENT_INVALID: whale_hunter_agent.py - whale_hunter_agent.py syntax error: unterminated f-string literal (detected at line 427) (<unknown>, line 427)
+2025-11-19 08:22:09 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 08:23:51 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 08:25:48 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 3 agent files in 536.4s
+2025-11-19 08:25:48 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 08:27:18 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 12 files in 1268.3s
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 12 files, 2,829 lines total
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 53 lines
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 219 lines
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 176 lines
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 153 lines
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 214 lines
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 228 lines
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 213 lines
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 308 lines
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 220 lines
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 401 lines
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 277 lines
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 367 lines
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 08:27:18 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 08:27:18 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 08:27:18 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 08:27:18 | WARNING  | UltimateTradingBot        | Mini-backtest error: unterminated string literal (detected at line 367) (alpha_orchestrator.py, line 367)
+2025-11-19 08:27:18 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 08:27:18 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 08:28:57 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 08:28:57 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 08:28:57 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 08:28:57 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_55
+2025-11-19 08:28:57 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 08:28:57 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 08:28:59 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'index'; falling back to simple PnL sim.
+2025-11-19 08:28:59 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 08:28:59 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 08:28:59 | INFO     | Bot.ENFORCER              | 🎯 STRATEGY_VIABLE: 2 signals | 80 trades
+2025-11-19 08:28:59 | INFO     | Bot.ENFORCER              | 🎯 ALPHA-VALIDATION: Checking strategy sophistication
+2025-11-19 08:28:59 | INFO     | Bot.ENFORCER              | 🎯 ALPHA_VALIDATION_PASSED: score 0.30
+2025-11-19 08:28:59 | INFO     | Bot.ALPHA-HUNTER          | ✅ Strategy VIABLE - alpha score meets threshold
+2025-11-19 08:28:59 | INFO     | Bot.ALPHA-HUNTER          |
+--
+2025-11-19 08:36:02 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 08:48:11 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 08:48:11 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 08:50:53 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: whale_hunter_agent.py
+2025-11-19 08:53:05 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 08:55:10 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 08:57:21 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 4 agent files in 550.6s
+2025-11-19 08:57:21 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 08:59:07 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 13 files in 1385.2s
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 13 files, 3,392 lines total
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 32 lines
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 269 lines
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 237 lines
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 284 lines
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 194 lines
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 185 lines
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 268 lines
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 332 lines
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 172 lines
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • whale_hunter_agent.py: 410 lines
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 339 lines
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 297 lines
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 373 lines
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 08:59:07 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 08:59:07 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 08:59:07 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 08:59:07 | WARNING  | UltimateTradingBot        | Mini-backtest error: cannot import name 'AdaptiveTradingStrategy' from 'strategies' (/root/KEEP_SAFE/v1/e22_iteration_56/strategies.py)
+2025-11-19 08:59:07 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 08:59:07 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 09:00:08 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 09:00:08 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 09:00:08 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 1 < 2
+2025-11-19 09:00:08 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 2 - Mini-backtest only 1 signals
+2025-11-19 09:01:01 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 09:01:01 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 3
+2025-11-19 09:01:01 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 1 < 2
+2025-11-19 09:01:01 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 3 - Mini-backtest only 1 signals
+2025-11-19 09:02:25 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 09:02:25 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 4
+2025-11-19 09:02:25 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 09:02:25 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_56
+2025-11-19 09:02:25 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+--
+2025-11-19 09:09:28 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 09:20:10 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 09:20:10 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 09:22:33 | ERROR    | Bot.AGENT-DESIGNER        | ❌ AGENT_INVALID: whale_hunter_agent.py - whale_hunter_agent.py syntax error: '(' was never closed (<unknown>, line 448)
+2025-11-19 09:24:55 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 09:26:40 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 09:28:09 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 3 agent files in 478.9s
+2025-11-19 09:28:09 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 09:30:31 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 12 files in 1263.8s
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 12 files, 3,082 lines total
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 31 lines
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 431 lines
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 159 lines
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 235 lines
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 210 lines
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 179 lines
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 226 lines
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 315 lines
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 231 lines
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 420 lines
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 304 lines
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 341 lines
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 09:30:31 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 09:30:31 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 09:30:31 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 09:30:31 | WARNING  | UltimateTradingBot        | Mini-backtest error: '{' was never closed (strategies.py, line 429)
+2025-11-19 09:30:31 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 09:30:31 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 09:31:54 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 09:31:54 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 09:31:54 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 1 < 2
+2025-11-19 09:31:54 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 2 - Mini-backtest only 1 signals
+2025-11-19 09:33:05 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 09:33:05 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 3
+2025-11-19 09:33:05 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 09:33:05 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_57
+2025-11-19 09:33:05 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 09:33:05 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 09:33:07 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'index'; falling back to simple PnL sim.
+2025-11-19 09:33:07 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 09:33:07 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 09:33:08 | INFO     | Bot.ENFORCER              | 🎯 STRATEGY_VIABLE: 2 signals | 160 trades
+--
+2025-11-19 09:39:02 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 09:49:54 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 09:49:54 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 09:51:50 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: whale_hunter_agent.py
+2025-11-19 09:53:56 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 09:55:56 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 09:57:33 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 4 agent files in 459.2s
+2025-11-19 09:57:33 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 09:59:14 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 13 files in 1212.3s
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 13 files, 3,483 lines total
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 46 lines
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 332 lines
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 192 lines
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 257 lines
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 147 lines
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 160 lines
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 336 lines
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 317 lines
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 245 lines
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • whale_hunter_agent.py: 354 lines
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 373 lines
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 362 lines
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 362 lines
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 09:59:14 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 09:59:14 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 09:59:14 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 09:59:15 | WARNING  | UltimateTradingBot        | Mini-backtest error: unterminated string literal (detected at line 362) (alpha_orchestrator.py, line 362)
+2025-11-19 09:59:15 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 09:59:15 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 10:00:44 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 10:00:44 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 10:00:44 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 1 < 2
+2025-11-19 10:00:44 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 2 - Mini-backtest only 1 signals
+2025-11-19 10:01:47 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 10:01:47 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 3
+2025-11-19 10:01:48 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 1 < 2
+2025-11-19 10:01:48 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 3 - Mini-backtest only 1 signals
+2025-11-19 10:03:20 | ERROR    | Bot.ENFORCER              | ❌ REGENERATED_STRATEGY_INVALID: strategies.py syntax error: '(' was never closed (<unknown>, line 199)
+2025-11-19 10:03:20 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 4
+2025-11-19 10:03:20 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 1 < 2
+2025-11-19 10:03:20 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 4 - Mini-backtest only 1 signals
+2025-11-19 10:04:35 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+--
+2025-11-19 10:09:17 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 10:18:10 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 10:18:10 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 10:20:20 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: whale_hunter_agent.py
+2025-11-19 10:22:26 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 10:23:53 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 10:25:17 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 4 agent files in 427.5s
+2025-11-19 10:25:17 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 10:26:46 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 13 files in 1049.1s
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 13 files, 3,209 lines total
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 34 lines
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 291 lines
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 268 lines
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 169 lines
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 141 lines
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 200 lines
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 220 lines
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 320 lines
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 186 lines
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • whale_hunter_agent.py: 415 lines
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 407 lines
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 255 lines
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 303 lines
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 10:26:46 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 10:26:46 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 10:26:46 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 10:26:46 | WARNING  | UltimateTradingBot        | Mini-backtest error: invalid syntax (alpha_orchestrator.py, line 292)
+2025-11-19 10:26:46 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 10:26:46 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 10:28:00 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 10:28:00 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 10:28:00 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 10:28:00 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_59
+2025-11-19 10:28:00 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 10:28:00 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 10:28:02 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'columns'; falling back to simple PnL sim.
+2025-11-19 10:28:02 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 10:28:02 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 10:28:02 | INFO     | Bot.ENFORCER              | 🎯 STRATEGY_VIABLE: 2 signals | 160 trades
+2025-11-19 10:28:02 | INFO     | Bot.ENFORCER              | 🎯 ALPHA-VALIDATION: Checking strategy sophistication
+2025-11-19 10:28:02 | INFO     | Bot.ENFORCER              | 🎯 ALPHA_VALIDATION_PASSED: score 0.30
+2025-11-19 10:28:02 | INFO     | Bot.ALPHA-HUNTER          | ✅ Strategy VIABLE - alpha score meets threshold
+--
+2025-11-19 10:33:51 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 10:45:10 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 10:45:10 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 10:47:21 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: whale_hunter_agent.py
+2025-11-19 10:49:21 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 10:51:23 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 10:53:32 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 4 agent files in 501.7s
+2025-11-19 10:53:32 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 10:55:00 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 13 files in 1269.8s
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 13 files, 3,947 lines total
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 35 lines
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 279 lines
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 244 lines
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 376 lines
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 203 lines
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 238 lines
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 297 lines
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 332 lines
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 281 lines
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • whale_hunter_agent.py: 422 lines
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 382 lines
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 405 lines
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 453 lines
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 10:55:00 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 10:55:00 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 10:55:00 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 10:55:00 | WARNING  | UltimateTradingBot        | Mini-backtest error: invalid syntax (strategies.py, line 263)
+2025-11-19 10:55:00 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 10:55:00 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 10:55:56 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 10:55:56 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 10:55:56 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 1 < 2
+2025-11-19 10:55:56 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 2 - Mini-backtest only 1 signals
+2025-11-19 10:57:01 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 10:57:01 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 3
+2025-11-19 10:57:01 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 10:57:01 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_60
+2025-11-19 10:57:01 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 10:57:01 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 10:57:03 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'index'; falling back to simple PnL sim.
+2025-11-19 10:57:03 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 10:57:03 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+--
+2025-11-19 11:02:21 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 11:12:56 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 11:12:56 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 11:15:12 | ERROR    | Bot.AGENT-DESIGNER        | ❌ AGENT_INVALID: whale_hunter_agent.py - whale_hunter_agent.py syntax error: unterminated string literal (detected at line 444) (<unknown>, line 444)
+2025-11-19 11:17:08 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 11:18:46 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 11:20:19 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 3 agent files in 442.7s
+2025-11-19 11:20:19 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 11:21:35 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 12 files in 1153.7s
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 12 files, 3,230 lines total
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 34 lines
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 251 lines
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 314 lines
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 209 lines
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 241 lines
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 205 lines
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 196 lines
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 377 lines
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 356 lines
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 393 lines
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 317 lines
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 337 lines
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 11:21:35 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 11:21:35 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 11:21:35 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 11:21:35 | WARNING  | UltimateTradingBot        | Mini-backtest error: invalid character '×' (U+00D7) (alpha_orchestrator.py, line 321)
+2025-11-19 11:21:35 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 11:21:35 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 11:22:23 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 11:22:23 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 11:22:23 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 11:22:23 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_61
+2025-11-19 11:22:23 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 11:22:23 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 11:22:25 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'index'; falling back to simple PnL sim.
+2025-11-19 11:22:25 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 11:22:25 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 11:22:25 | INFO     | Bot.ENFORCER              | 🎯 STRATEGY_VIABLE: 2 signals | 140 trades
+2025-11-19 11:22:25 | INFO     | Bot.ENFORCER              | 🎯 ALPHA-VALIDATION: Checking strategy sophistication
+2025-11-19 11:22:25 | INFO     | Bot.ENFORCER              | 🎯 ALPHA_VALIDATION_PASSED: score 0.30
+2025-11-19 11:22:25 | INFO     | Bot.ALPHA-HUNTER          | ✅ Strategy VIABLE - alpha score meets threshold
+2025-11-19 11:22:25 | INFO     | Bot.ALPHA-HUNTER          |
+--
+2025-11-19 11:27:09 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 11:36:30 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 11:36:30 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 11:38:43 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: whale_hunter_agent.py
+2025-11-19 11:41:01 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 11:42:19 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 11:43:41 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 4 agent files in 431.2s
+2025-11-19 11:43:41 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 11:45:31 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 13 files in 1102.1s
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 13 files, 3,420 lines total
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 40 lines
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 333 lines
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 222 lines
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 242 lines
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 204 lines
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 185 lines
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 254 lines
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 334 lines
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 201 lines
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • whale_hunter_agent.py: 417 lines
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 429 lines
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 242 lines
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 317 lines
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 11:45:31 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 11:45:31 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 11:45:31 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 11:45:31 | WARNING  | UltimateTradingBot        | Mini-backtest error: invalid character '×' (U+00D7) (alpha_orchestrator.py, line 314)
+2025-11-19 11:45:31 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 11:45:31 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 11:46:17 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 11:46:17 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 11:46:18 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 11:46:18 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_62
+2025-11-19 11:46:18 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 11:46:18 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 11:46:19 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'index'; falling back to simple PnL sim.
+2025-11-19 11:46:19 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 11:46:19 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 11:46:20 | INFO     | Bot.ENFORCER              | 🎯 STRATEGY_VIABLE: 2 signals | 120 trades
+2025-11-19 11:46:20 | INFO     | Bot.ENFORCER              | 🎯 ALPHA-VALIDATION: Checking strategy sophistication
+2025-11-19 11:46:20 | INFO     | Bot.ENFORCER              | 🎯 ALPHA_VALIDATION_PASSED: score 0.30
+2025-11-19 11:46:20 | INFO     | Bot.ALPHA-HUNTER          | ✅ Strategy VIABLE - alpha score meets threshold
+--
+2025-11-19 11:51:33 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 12:01:42 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 12:01:42 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 12:04:01 | ERROR    | Bot.AGENT-DESIGNER        | ❌ AGENT_INVALID: whale_hunter_agent.py - whale_hunter_agent.py syntax error: unterminated string literal (detected at line 432) (<unknown>, line 432)
+2025-11-19 12:06:11 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 12:07:44 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 12:09:17 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 3 agent files in 454.6s
+2025-11-19 12:09:17 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 12:11:05 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 12 files in 1172.2s
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 12 files, 3,081 lines total
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 123 lines
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 291 lines
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 172 lines
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 216 lines
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 248 lines
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 310 lines
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 332 lines
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 351 lines
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 43 lines
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 378 lines
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 274 lines
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 343 lines
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 12:11:05 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 12:11:05 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 12:11:05 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 12:11:06 | WARNING  | UltimateTradingBot        | Mini-backtest error: invalid syntax (alpha_orchestrator.py, line 328)
+2025-11-19 12:11:06 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 12:11:06 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 12:11:55 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 12:11:55 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 12:11:55 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 12:11:55 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_63
+2025-11-19 12:11:55 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 12:11:55 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 12:11:57 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'index'; falling back to simple PnL sim.
+2025-11-19 12:11:57 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 12:11:57 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 12:11:57 | INFO     | Bot.ENFORCER              | 🎯 STRATEGY_VIABLE: 2 signals | 120 trades
+2025-11-19 12:11:57 | INFO     | Bot.ENFORCER              | 🎯 ALPHA-VALIDATION: Checking strategy sophistication
+2025-11-19 12:11:57 | INFO     | Bot.ENFORCER              | 🎯 ALPHA_VALIDATION_PASSED: score 0.30
+2025-11-19 12:11:57 | INFO     | Bot.ALPHA-HUNTER          | ✅ Strategy VIABLE - alpha score meets threshold
+2025-11-19 12:11:57 | INFO     | Bot.ALPHA-HUNTER          |
+--
+2025-11-19 12:17:05 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 12:26:07 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 12:26:07 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 12:27:54 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: whale_hunter_agent.py
+2025-11-19 12:29:41 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: liquidity_miner_agent.py
+2025-11-19 12:31:18 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 12:33:04 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 4 agent files in 417.7s
+2025-11-19 12:33:04 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 12:35:24 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 13 files in 1099.1s
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 13 files, 3,201 lines total
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 31 lines
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 376 lines
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 154 lines
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 150 lines
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 146 lines
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 194 lines
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 197 lines
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 376 lines
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 213 lines
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • whale_hunter_agent.py: 352 lines
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • liquidity_miner_agent.py: 333 lines
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 315 lines
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 364 lines
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 12:35:24 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 12:35:24 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 12:35:24 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 12:35:24 | WARNING  | UltimateTradingBot        | Mini-backtest error: unterminated string literal (detected at line 364) (alpha_orchestrator.py, line 364)
+2025-11-19 12:35:24 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 12:35:24 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 12:36:19 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 12:36:19 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 12:36:20 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 1 < 2
+2025-11-19 12:36:20 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 2 - Mini-backtest only 1 signals
+2025-11-19 12:37:32 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 12:37:32 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 3
+2025-11-19 12:37:33 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 12:37:33 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_64
+2025-11-19 12:37:33 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 12:37:33 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 12:37:35 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'index'; falling back to simple PnL sim.
+2025-11-19 12:37:35 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 12:37:35 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+--
+2025-11-19 12:43:04 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+2025-11-19 12:53:24 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-2: Generating alpha hunting agents
+2025-11-19 12:53:24 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_START: Creating alpha hunting agent ecosystem
+2025-11-19 12:55:47 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: whale_hunter_agent.py
+2025-11-19 12:58:12 | ERROR    | Bot.AGENT-DESIGNER        | ❌ AGENT_INVALID: liquidity_miner_agent.py - liquidity_miner_agent.py syntax error: '(' was never closed (<unknown>, line 446)
+2025-11-19 12:59:52 | INFO     | Bot.AGENT-DESIGNER        | ✅ AGENT_CREATED: volatility_predictor_agent.py
+2025-11-19 13:01:42 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 3 agent files in 498.0s
+2025-11-19 13:01:42 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-3: Enhancing strategies to use agents
+2025-11-19 13:03:25 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 12 files in 1221.0s
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          | ✅ Code generated: 12 files, 3,178 lines total
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • main.py: 62 lines
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • strategies.py: 308 lines
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • exchange_client.py: 250 lines
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • htx_feed.py: 315 lines
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • rate_limiter.py: 188 lines
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • data_manager.py: 192 lines
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • features.py: 237 lines
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • backtester.py: 319 lines
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • strategy_runner.py: 207 lines
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • whale_hunter_agent.py: 453 lines
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • volatility_predictor_agent.py: 290 lines
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • alpha_orchestrator.py: 357 lines
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          | ┌─────────────────────────────────────────────────────────┐
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          | │ 🎯 PHASE 3: ALPHA VALIDATOR                             │
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          | └─────────────────────────────────────────────────────────┘
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          | 📝 What's happening:
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • Analyzing strategy sophistication (alpha score)
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • Checking for signal diversity and edge detection
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • Validating risk management and position sizing
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          |    • Threshold: Alpha score must be ≥ 0.3
+2025-11-19 13:03:25 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Strategy viability decision
+2025-11-19 13:03:25 | INFO     | Bot.ENFORCER              | 🎯 PHASE_START: Strategy viability enforcement
+2025-11-19 13:03:25 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 1
+2025-11-19 13:03:25 | WARNING  | UltimateTradingBot        | Mini-backtest error: cannot import name 'AdaptiveTradingStrategy' from 'strategies' (/root/KEEP_SAFE/v1/e22_iteration_65/strategies.py)
+2025-11-19 13:03:25 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 0 < 2
+2025-11-19 13:03:25 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 1 - Mini-backtest only 0 signals
+2025-11-19 13:04:56 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 13:04:56 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 2
+2025-11-19 13:04:56 | WARNING  | Bot.ENFORCER              | 🎯 SIGNALS_FAIL: 1 < 2
+2025-11-19 13:04:56 | INFO     | Bot.ENFORCER              | 🔄 REGENERATING_STRATEGY: attempt 2 - Mini-backtest only 1 signals
+2025-11-19 13:06:17 | INFO     | Bot.ENFORCER              | ✅ STRATEGY_REGENERATED
+2025-11-19 13:06:17 | INFO     | Bot.ENFORCER              | 🎯 ENFORCEMENT_ATTEMPT: 3
+2025-11-19 13:06:17 | INFO     | UltimateTradingBot        | ⚡ Short paper trading (15 cycles)
+2025-11-19 13:06:17 | INFO     | UltimateTradingBot        | 🚀 Starting ENHANCED paper trading for /root/KEEP_SAFE/v1/e22_iteration_65
+2025-11-19 13:06:17 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 13:06:17 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 13:06:19 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'empty'; falling back to simple PnL sim.
+2025-11-19 13:06:19 | INFO     | UltimateTradingBot        | 🔄 Attempting to import AdaptiveTradingStrategy from strategies
+2025-11-19 13:06:19 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 13:06:19 | INFO     | Bot.ENFORCER              | 🎯 STRATEGY_VIABLE: 2 signals | 80 trades
+--
+2025-11-19 13:10:37 | INFO     | Bot.CODER                 | 🛠️ CODER-PHASE-1: Generating infrastructure files
+=== ERRORS OR COMPLETION ===
+2025-11-19 12:37:33 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 12:37:35 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'index'; falling back to simple PnL sim.
+2025-11-19 12:37:35 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 12:37:35 | INFO     | Bot.ALPHA-HUNTER          |    • Auto-fixing syntax errors and import issues (max 3 attempts)
+2025-11-19 12:37:35 | ERROR    | UltimateTradingBot        | Runtime error attempt 1: Traceback (most recent call last):
+2025-11-19 12:38:42 | ERROR    | UltimateTradingBot        | Runtime error attempt 2: Traceback (most recent call last):
+2025-11-19 12:39:49 | ERROR    | UltimateTradingBot        | Runtime error attempt 3: Traceback (most recent call last):
+2025-11-19 12:40:51 | INFO     | Bot.ALPHA-HUNTER          | ❌ Runtime validation FAILED - code won't execute
+2025-11-19 12:40:51 | INFO     | Bot.ALPHA-HUNTER          |    • Total Iterations: 63 completed
+2025-11-19 12:40:51 | INFO     | Bot.ALPHA-HUNTER          |    • Errors in Memory: 154
+2025-11-19 12:40:51 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Complete execution plan with agent roles
+2025-11-19 12:43:04 | INFO     | Bot.REASONER              | 🧠 PHASE_COMPLETE: Plan built with 9 files in 132.9s
+2025-11-19 12:43:04 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Complete codebase ready to execute
+2025-11-19 12:58:12 | ERROR    | Bot.AGENT-DESIGNER        | ❌ AGENT_INVALID: liquidity_miner_agent.py - liquidity_miner_agent.py syntax error: '(' was never closed (<unknown>, line 446)
+2025-11-19 13:01:42 | INFO     | Bot.AGENT-DESIGNER        | 🤖 PHASE_COMPLETE: Created 3 agent files in 498.0s
+2025-11-19 13:03:25 | INFO     | Bot.CODER                 | 🛠️ PHASE_COMPLETE: Generated 12 files in 1221.0s
+2025-11-19 13:03:25 | WARNING  | UltimateTradingBot        | Mini-backtest error: cannot import name 'AdaptiveTradingStrategy' from 'strategies' (/root/KEEP_SAFE/v1/e22_iteration_65/strategies.py)
+2025-11-19 13:06:17 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 13:06:19 | ERROR    | UltimateTradingBot        | Backtester execution failed: 'dict' object has no attribute 'empty'; falling back to simple PnL sim.
+2025-11-19 13:06:19 | INFO     | UltimateTradingBot        | ✅ SUCCESS: Loaded AdaptiveTradingStrategy from strategies (E22 contract)
+2025-11-19 13:06:19 | INFO     | Bot.ALPHA-HUNTER          |    • Auto-fixing syntax errors and import issues (max 3 attempts)
+2025-11-19 13:06:19 | ERROR    | UltimateTradingBot        | Runtime error attempt 1: /root/KEEP_SAFE/v1/e22_iteration_65/main.py:8: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+2025-11-19 13:07:45 | ERROR    | UltimateTradingBot        | Runtime error attempt 2: /root/KEEP_SAFE/v1/e22_iteration_65/main.py:8: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+2025-11-19 13:08:45 | ERROR    | UltimateTradingBot        | Runtime error attempt 3: /root/KEEP_SAFE/v1/e22_iteration_65/main.py:8: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+2025-11-19 13:09:00 | INFO     | Bot.ALPHA-HUNTER          | ❌ Runtime validation FAILED - code won't execute
+2025-11-19 13:09:00 | INFO     | Bot.ALPHA-HUNTER          |    • Total Iterations: 64 completed
+2025-11-19 13:09:00 | INFO     | Bot.ALPHA-HUNTER          |    • Errors in Memory: 157
+2025-11-19 13:09:00 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Complete execution plan with agent roles
+2025-11-19 13:10:37 | INFO     | Bot.REASONER              | 🧠 PHASE_COMPLETE: Plan built with 9 files in 96.2s
+2025-11-19 13:10:37 | INFO     | Bot.ALPHA-HUNTER          | 🎯 Output: Complete codebase ready to execute
+(base) root@Ubuntu-2404-noble-amd64-base ~/KEEP_SAFE/v1/fai #
