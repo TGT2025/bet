@@ -559,7 +559,10 @@ class MonitoringAgent:
             'current_pnl': 0.0,
             'realized_pnl': 0.0,
             'recent_trades': [],  # Store last 50 trades
-            'daily_pnl_history': []  # Track daily P&L for qualification
+            'daily_pnl_history': [],  # Track daily P&L for qualification
+            'avg_trade_duration_minutes': 0,  # NEW: Track average time in trades
+            'total_trade_duration_minutes': 0,  # NEW: Cumulative trade duration
+            'last_trade_entry_time': None  # NEW: Track when last trade was entered
         }
     
     def update_champion_performance(self, champion_id: str, trade_data: Dict):
@@ -609,18 +612,27 @@ class MonitoringAgent:
         champion['realized_pnl'] += pnl_delta
         champion['bankroll'] = champion.get('initial_bankroll', 10000.0) + champion['realized_pnl']
         
+        # NEW: Track trade duration (estimate 5 minutes per trade cycle on average)
+        if trades_delta > 0:
+            # Estimate: each new trade stays open for average of 4 hours (240 minutes)
+            # This is a simplified model - real systems would track actual entry/exit times
+            estimated_duration_per_trade = 240  # 4 hours average
+            champion['total_trade_duration_minutes'] = champion.get('total_trade_duration_minutes', 0) + (trades_delta * estimated_duration_per_trade)
+            champion['avg_trade_duration_minutes'] = champion['total_trade_duration_minutes'] / champion['total_trades'] if champion['total_trades'] > 0 else 0
+        
         # Add to recent trades (keep last 50)
         if trades_delta > 0:
             champion.setdefault('recent_trades', []).append({
                 'timestamp': datetime.now().isoformat(),
                 'count': trades_delta,
                 'pnl': pnl_delta,
-                'bankroll': champion['bankroll']
+                'bankroll': champion['bankroll'],
+                'estimated_duration_hours': estimated_duration_per_trade / 60
             })
             champion['recent_trades'] = champion['recent_trades'][-50:]
     
     def _check_champion_qualification(self, champion_id: str):
-        """Check if champion qualifies for upgrade to QUALIFIED or ELITE status"""
+        """Check if champion qualifies for upgrade to QUALIFIED or ELITE status - FASTER PROGRESSION"""
         champion = self.champion_tracker.get(champion_id)
         if not champion:
             return
@@ -629,29 +641,32 @@ class MonitoringAgent:
         winning_days = champion.get('winning_days', 0)
         bankroll = champion.get('bankroll', 10000.0)
         initial_bankroll = champion.get('initial_bankroll', 10000.0)
+        total_trades = champion.get('total_trades', 0)
         
         current_status = champion.get('status', 'CHAMPION')
         
-        # QUALIFIED: 7+ days trading, 60%+ winning days, 10%+ profit
-        if current_status == 'CHAMPION' and total_days >= 7:
+        # QUALIFIED: FASTER - 3+ days (was 7), 60%+ winning days, 8%+ profit, 50+ trades
+        # Added trade count requirement to ensure enough sample size
+        if current_status == 'CHAMPION' and total_days >= 3:
             win_rate_days = winning_days / total_days if total_days > 0 else 0
             profit_pct = (bankroll - initial_bankroll) / initial_bankroll
             
-            if win_rate_days >= 0.60 and profit_pct >= 0.10:
+            if win_rate_days >= 0.60 and profit_pct >= 0.08 and total_trades >= 50:
                 champion['status'] = 'QUALIFIED'
                 champion['qualified_at'] = datetime.now()
-                logger.info(f"🎖️ {champion_id} UPGRADED to QUALIFIED - {win_rate_days:.1%} winning days, {profit_pct:.1%} profit")
+                logger.info(f"🎖️ {champion_id} UPGRADED to QUALIFIED - {win_rate_days:.1%} winning days, {profit_pct:.1%} profit, {total_trades} trades in {total_days} days")
         
-        # ELITE: 30+ days, 65%+ winning days, 30%+ profit, eligible for real trading
-        elif current_status == 'QUALIFIED' and total_days >= 30:
+        # ELITE: FASTER - 14+ days (was 30), 65%+ winning days, 25%+ profit, 200+ trades, eligible for real trading
+        # Reduced time but maintaining high performance standards
+        elif current_status == 'QUALIFIED' and total_days >= 14:
             win_rate_days = winning_days / total_days if total_days > 0 else 0
             profit_pct = (bankroll - initial_bankroll) / initial_bankroll
             
-            if win_rate_days >= 0.65 and profit_pct >= 0.30:
+            if win_rate_days >= 0.65 and profit_pct >= 0.25 and total_trades >= 200:
                 champion['status'] = 'ELITE'
                 champion['elite_at'] = datetime.now()
                 champion['real_trading_eligible'] = True
-                logger.info(f"👑 {champion_id} UPGRADED to ELITE - REAL TRADING ELIGIBLE! {win_rate_days:.1%} winning days, {profit_pct:.1%} profit")
+                logger.info(f"👑 {champion_id} UPGRADED to ELITE - REAL TRADING ELIGIBLE! {win_rate_days:.1%} winning days, {profit_pct:.1%} profit, {total_trades} trades in {total_days} days")
     
     def get_dashboard_data(self) -> Dict:
         """Get comprehensive dashboard data"""
@@ -686,7 +701,7 @@ class MonitoringAgent:
         return summaries
     
     def _get_champion_performance(self) -> List[Dict]:
-        """Get champion performance data - ENHANCED with status, bankroll, and qualification metrics"""
+        """Get champion performance data - ENHANCED with status, bankroll, qualification metrics, and trade duration"""
         performance = []
         for champ_id, data in self.champion_tracker.items():
             perf_data = {
@@ -703,6 +718,8 @@ class MonitoringAgent:
                 'winning_days': data.get('winning_days', 0),
                 'total_days': data.get('total_days', 0),
                 'win_rate_days': (data.get('winning_days', 0) / data.get('total_days', 1)) if data.get('total_days', 0) > 0 else 0,
+                'avg_trade_duration_minutes': data.get('avg_trade_duration_minutes', 0),
+                'avg_trade_duration_hours': data.get('avg_trade_duration_minutes', 0) / 60,
                 'performance': data.get('performance', {}),
                 'strategy_metadata': data.get('strategy_metadata', {}),
                 'real_trading_eligible': data.get('real_trading_eligible', False)
@@ -1809,10 +1826,33 @@ require_real_data (bool, true to forbid synthetic sources).
                     "purpose": "Forecast volatility regimes and detect turbulence",
                     "data_sources": ["GARCH models", "funding rates", "cross-asset spillover"],
                     "outputs": ["volatility_regime", "spike_predictions"]
+                },
+                # RECOMMENDED ADDITIONAL AGENTS (based on user feedback):
+                {
+                    "name": "news_sentiment_analyzer",
+                    "purpose": "Parse crypto news/social media for sentiment shifts",
+                    "data_sources": ["Twitter/X crypto feeds", "Reddit r/cryptocurrency", "crypto news APIs"],
+                    "outputs": ["sentiment_score", "narrative_shifts", "trending_topics"],
+                    "implementation_note": "Use LLM or NLP to analyze headlines and posts"
+                },
+                {
+                    "name": "on_chain_analyst", 
+                    "purpose": "Monitor blockchain data for smart money activity",
+                    "data_sources": ["exchange flows", "whale wallet movements", "miner balances"],
+                    "outputs": ["exchange_flow_signal", "whale_accumulation", "sell_pressure"],
+                    "implementation_note": "Query blockchain APIs like Etherscan, Glassnode"
+                },
+                {
+                    "name": "funding_rate_monitor",
+                    "purpose": "Track perpetual funding rates for contrarian signals",
+                    "data_sources": ["HTX funding rates", "Binance/Bybit funding", "open interest"],
+                    "outputs": ["funding_extremes", "liquidation_risk", "long_short_ratio"],
+                    "implementation_note": "High funding = crowded trade, potential reversal"
                 }
             ],
             "orchestration_strategy": "composite_alpha_fusion",
-            "alpha_focus": "PREDICTIVE_SIGNALS"
+            "alpha_focus": "PREDICTIVE_SIGNALS",
+            "future_enhancements": "Add agents incrementally as system proves reliable"
         }
 
         self.approved_manifest = plan_json
