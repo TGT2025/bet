@@ -903,11 +903,16 @@ class MinTradesEnforcer:
             return True  # Don't block on validation errors
 
     def _calculate_alpha_sophistication(self, signals: List[Dict], project_dir: str) -> float:
-        """Calculate sophistication score of generated signals with enhanced criteria"""
+        """Calculate sophistication score of generated signals with enhanced criteria - FIXED VERSION"""
+        
+        logger.info("📊 Calculating alpha score...")
+        
         if not signals:
+            logger.info("   No signals - returning 0.0")
             return 0.0
 
         score = 0.0
+        logger.info(f"   Analyzing {len(signals)} signals")
 
         # Check signal diversity
         symbols = set(s.get('symbol') for s in signals)
@@ -915,8 +920,10 @@ class MinTradesEnforcer:
 
         if len(symbols) > 1:
             score += 0.2
+            logger.info(f"   ✅ Multi-symbol coverage: {len(symbols)} symbols → +0.2")
         if len(strategies) > 1:
             score += 0.2
+            logger.info(f"   ✅ Multi-strategy: {len(strategies)} strategies → +0.2")
 
         # Check for advanced features
         has_confidence = False
@@ -927,12 +934,15 @@ class MinTradesEnforcer:
             if 'confidence' in signal and not has_confidence:
                 score += 0.1
                 has_confidence = True
+                logger.info("   ✅ Confidence scoring present → +0.1")
             if 'risk_score' in signal and not has_risk_score:
                 score += 0.1
                 has_risk_score = True
+                logger.info("   ✅ Risk scoring present → +0.1")
             if 'position_size' in signal and not has_position_size:
                 score += 0.1
                 has_position_size = True
+                logger.info("   ✅ Position sizing present → +0.1")
 
         # Check if using agent ecosystem and advanced strategies
         try:
@@ -943,26 +953,39 @@ class MinTradesEnforcer:
                 # Agent ecosystem detection
                 if 'alpha_orchestrator' in strategies_code:
                     score += 0.3
+                    logger.info("   ✅ Alpha orchestrator detected → +0.3")
                 if any(agent in strategies_code for agent in ['whale_hunter', 'liquidity_miner', 'volatility_predictor']):
                     score += 0.2
+                    logger.info("   ✅ Specialized agents detected → +0.2")
                 
                 # Advanced indicators
                 if 'volume' in strategies_code:
                     score += 0.1
+                    logger.info("   ✅ Volume analysis → +0.1")
                 if 'volatility' in strategies_code or 'atr' in strategies_code:
                     score += 0.1
+                    logger.info("   ✅ Volatility metrics → +0.1")
                 if 'momentum' in strategies_code:
                     score += 0.1
+                    logger.info("   ✅ Momentum indicators → +0.1")
                 
                 # Risk management
                 if 'stop_loss' in strategies_code:
                     score += 0.1
+                    logger.info("   ✅ Stop loss protection → +0.1")
                 if 'take_profit' in strategies_code:
                     score += 0.1
-        except:
+                    logger.info("   ✅ Take profit management → +0.1")
+        except Exception as e:
+            logger.warning(f"   ⚠️ Could not analyze strategies file: {e}")
             pass
 
-        return min(1.0, score)
+        final_score = min(1.0, score)
+        logger.info(f"📈 FINAL ALPHA SCORE: {final_score:.4f}")
+        logger.info(f"   Threshold: 0.60")
+        logger.info(f"   Status: {'✅ PASS' if final_score >= 0.60 else '❌ FAIL'}")
+        
+        return final_score
 
     def _regenerate_strategy(self, plan: Dict[str, Any], project_dir: str, failure_reason: str, attempt: int):
         enforcer_logger = logging.getLogger("Bot.ENFORCER")
@@ -1994,6 +2017,64 @@ if __name__ == "__main__":
         monitoring_logger.info(f"✅ Monitoring API generated: {api_path}")
         return api_path
     
+    def start_monitoring_server(self):
+        """Start simple monitoring HTTP server - can run before project creation"""
+        try:
+            from flask import Flask, jsonify
+            
+            app = Flask(__name__)
+            
+            @app.route('/api/status')
+            def status():
+                return jsonify({
+                    'iteration': self.iteration_count,
+                    'champions': len(self.active_champions),
+                    'status': 'running',
+                    'timestamp': datetime.now().isoformat()
+                })
+            
+            @app.route('/')
+            def dashboard():
+                return f"""
+                <html>
+                <head>
+                    <title>E17 Trading System Monitor</title>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }}
+                        .container {{ background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+                        h1 {{ color: #2c3e50; }}
+                        .metric {{ margin: 15px 0; padding: 15px; background: #ecf0f1; border-radius: 5px; }}
+                        .value {{ font-size: 24px; font-weight: bold; color: #3498db; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>🤖 E17 Trading System Monitor</h1>
+                        <div class="metric">
+                            <strong>Current Iteration:</strong>
+                            <div class="value">{self.iteration_count}</div>
+                        </div>
+                        <div class="metric">
+                            <strong>Active Champions:</strong>
+                            <div class="value">{len(self.active_champions)}</div>
+                        </div>
+                        <div class="metric">
+                            <strong>System Status:</strong>
+                            <div class="value">Running ✅</div>
+                        </div>
+                        <div class="metric">
+                            <strong>Timestamp:</strong>
+                            <div>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+            
+            app.run(host='0.0.0.0', port=8000, threaded=True, debug=False, use_reloader=False)
+        except Exception as e:
+            logger.error(f"Monitoring server error: {e}")
+
     def _start_monitoring_api(self):
         """Start monitoring API in background thread"""
         if self.monitoring_api_started:
@@ -2048,21 +2129,22 @@ if __name__ == "__main__":
     # =========================================================================================
 
     def _run_continuous_alpha_hunting_loop(self, max_iterations: int = None):
-        """🔄 ENHANCED LOOP: Continuous alpha discovery with champion persistence"""
+        """🔄 ENHANCED LOOP: Continuous alpha discovery with champion persistence - CRASH PROOF"""
 
         alpha_hunter_logger = logging.getLogger("Bot.ALPHA-HUNTER")
         alpha_hunter_logger.info("🚀 STARTING_CONTINUOUS_ALPHA_HUNTING")
 
         iteration = 0
+        consecutive_failures = 0
+        MAX_FAILURES = 5
 
-        while True:  # INFINITE LOOP for continuous alpha hunting
+        while True:  # INFINITE LOOP for continuous alpha hunting - NOW WITH RECOVERY!
             iteration += 1
             self.iteration_count = iteration
 
-            alpha_hunter_logger.info(f"🔄 CONTINUOUS-ALPHA Iteration {iteration}")
-            self._log_phase_progress("alpha_hunting", iteration, "start", f"Iteration {iteration}")
-
             try:
+                alpha_hunter_logger.info(f"🔄 CONTINUOUS-ALPHA Iteration {iteration}")
+                self._log_phase_progress("alpha_hunting", iteration, "start", f"Iteration {iteration}")
                 # Capture iteration start in monitoring
                 self.monitoring_agent.capture_iteration_start(iteration, {})
                 
@@ -2145,12 +2227,32 @@ if __name__ == "__main__":
                 # Loop continues automatically
 
                 self._log_phase_progress("alpha_hunting", iteration, "complete", f"Completed iteration {iteration}")
+                
+                # Reset failure counter on success
+                consecutive_failures = 0
+
+            except KeyboardInterrupt:
+                alpha_hunter_logger.info("🛑 User stopped the system - shutting down gracefully")
+                break
 
             except Exception as e:
+                consecutive_failures += 1
                 error_logger = logging.getLogger("Bot.ERROR")
-                error_logger.error(f"💥 ALPHA_HUNTING_ITERATION_FAILED {iteration}: {e}")
+                error_logger.error(f"❌ ITERATION {iteration} CRASHED: {e}")
+                error_logger.error(f"   Traceback: {traceback.format_exc()}")
+                error_logger.warning(f"   Failures: {consecutive_failures}/{MAX_FAILURES}")
                 self._log_phase_progress("alpha_hunting", iteration, "error", f"Failed: {str(e)[:100]}")
                 self.error_memory.append({"iteration": iteration, "error": str(e)})
+                
+                if consecutive_failures >= MAX_FAILURES:
+                    alpha_hunter_logger.critical("🚨 TOO MANY CRASHES - EMERGENCY SHUTDOWN")
+                    raise
+                
+                # Exponential backoff before retry
+                wait_time = min(30 * (2 ** (consecutive_failures - 1)), 300)  # Max 5 min
+                alpha_hunter_logger.info(f"⏳ Recovering... waiting {wait_time}s before retry")
+                time.sleep(wait_time)
+                alpha_hunter_logger.info(f"🔄 RESTARTING iteration {iteration}")
                 continue
 
     # =========================================================================================
@@ -3070,6 +3172,25 @@ def main():
         sys.exit(1)
 
     system = E22MinTradesEnforcedSystem(api_key)
+    
+    # 🔧 NEW: START MONITORING FIRST!
+    print("\n🚀 Starting monitoring endpoints...")
+    try:
+        # Start monitoring in background thread
+        monitoring_thread = threading.Thread(
+            target=system.start_monitoring_server,
+            daemon=True,
+            name="MonitoringServer"
+        )
+        monitoring_thread.start()
+        print("✅ Monitoring server started")
+        print("   Dashboard: http://localhost:8000")
+        print("   API: http://localhost:8000/api/status")
+        time.sleep(2)  # Give it time to start
+    except Exception as e:
+        print(f"⚠️  Monitoring server failed to start: {e}")
+        print("   Continuing without monitoring (system will still work)")
+    
     try:
         system.manager_phase_input()
 
