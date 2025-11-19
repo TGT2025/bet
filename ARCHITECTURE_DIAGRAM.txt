@@ -1,0 +1,127 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    E17FINAL + MONOLITH INTEGRATION                           ║
+║                         (Automatic Setup)                                    ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│                        python3 e17final.py                                  │
+│                                  ▼                                          │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ E17 Trading System (e17final)                                       │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │                                                                     │   │
+│  │  1. System Initialization                                          │   │
+│  │     ├─ Load configuration                                          │   │
+│  │     ├─ Initialize DeepSeek client                                  │   │
+│  │     ├─ Setup checkpointing, heartbeat, watchdog                    │   │
+│  │     └─ Create monitoring agent                                     │   │
+│  │                                                                     │   │
+│  │  2. Flask Server Setup (start_monitoring_server)                   │   │
+│  │     ├─ Create Flask app                                            │   │
+│  │     ├─ Enable CORS                                                 │   │
+│  │     │                                                               │   │
+│  │     ├─ Register Original Endpoints:                                │   │
+│  │     │  ├─ /api/status                                              │   │
+│  │     │  ├─ /api/iterations                                          │   │
+│  │     │  ├─ /api/champions                                           │   │
+│  │     │  ├─ /api/heartbeat                                           │   │
+│  │     │  ├─ /api/errors                                              │   │
+│  │     │  ├─ /api/logs                                                │   │
+│  │     │  ├─ /api/agents                                              │   │
+│  │     │  ├─ /api/metrics                                             │   │
+│  │     │  └─ /api/checkpoints                                         │   │
+│  │     │                                                               │   │
+│  │     ├─ ★ MONOLITH INTEGRATION (AUTOMATIC) ★                        │   │
+│  │     │  ┌────────────────────────────────────────────────────────┐  │   │
+│  │     │  │ from monolith import get_tracker_instance              │  │   │
+│  │     │  │ from monolith_api_endpoints import                     │  │   │
+│  │     │  │      register_monolith_endpoints                       │  │   │
+│  │     │  │                                                          │  │   │
+│  │     │  │ tracker = get_tracker_instance()                        │  │   │
+│  │     │  │ register_monolith_endpoints(app, system, tracker)       │  │   │
+│  │     │  │ system.activity_tracker = tracker                       │  │   │
+│  │     │  │                                                          │  │   │
+│  │     │  │ # Graceful error handling:                             │  │   │
+│  │     │  │ # If module not found, logs warning and continues      │  │   │
+│  │     │  │ # with system.activity_tracker = None                  │  │   │
+│  │     │  └────────────────────────────────────────────────────────┘  │   │
+│  │     │                                                               │   │
+│  │     ├─ Register Monolith Endpoints (automatically):                │   │
+│  │     │  ├─ /api/monolith/trial_trades                              │   │
+│  │     │  ├─ /api/monolith/agent_thoughts                            │   │
+│  │     │  ├─ /api/monolith/agent_suggestions                         │   │
+│  │     │  ├─ /api/monolith/agent_status                              │   │
+│  │     │  ├─ /api/monolith/strategy_breakdown                        │   │
+│  │     │  ├─ /api/monolith/iteration_summary                         │   │
+│  │     │  └─ /api/monolith/dashboard_data                            │   │
+│  │     │                                                               │   │
+│  │     └─ Start Flask server on 0.0.0.0:8000                          │   │
+│  │                                                                     │   │
+│  │  3. Trading Loop                                                   │   │
+│  │     ├─ Run iterations                                              │   │
+│  │     ├─ Generate strategies                                         │   │
+│  │     ├─ Test with agents                                            │   │
+│  │     ├─ Log to activity_tracker (if available)                      │   │
+│  │     └─ Promote champions                                           │   │
+│  │                                                                     │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                                    ▼
+                                    
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        Flask Server (Port 8000)                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Original Endpoints          │  Monolith Endpoints                         │
+│  ────────────────────        │  ──────────────────                         │
+│  /api/status                 │  /api/monolith/trial_trades                 │
+│  /api/iterations             │  /api/monolith/agent_thoughts               │
+│  /api/champions              │  /api/monolith/agent_suggestions            │
+│  /api/heartbeat              │  /api/monolith/agent_status                 │
+│  /api/errors                 │  /api/monolith/strategy_breakdown           │
+│  /api/logs                   │  /api/monolith/iteration_summary            │
+│  /api/agents                 │  /api/monolith/dashboard_data               │
+│  /api/metrics                │                                             │
+│  /api/checkpoints            │                                             │
+│                              │                                             │
+│         ▲                    │              ▲                              │
+│         │                    │              │                              │
+│         └────────────────────┴──────────────┘                              │
+│                              │                                             │
+│                    All work together!                                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                                    ▼
+                                    
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            Frontend Access                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Dashboard: http://localhost:8000                                          │
+│  ├─ Shows all endpoints (original + Monolith)                              │
+│  └─ Click to test each endpoint                                            │
+│                                                                             │
+│  JavaScript/React/Vue:                                                      │
+│  └─ fetch('http://localhost:8000/api/monolith/dashboard_data')            │
+│                                                                             │
+│  curl/wget:                                                                 │
+│  └─ curl http://localhost:8000/api/monolith/trial_trades                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  KEY POINTS:                                                                 ║
+║                                                                              ║
+║  ✅ monolith_api_endpoints.py is NOT run separately                         ║
+║  ✅ It's imported and called by e17final automatically                      ║
+║  ✅ All endpoints work together in ONE Flask server                         ║
+║  ✅ NO manual integration needed - it's automatic!                          ║
+║  ✅ Graceful error handling if module not found                             ║
+║  ✅ Just run: python3 e17final.py                                           ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
