@@ -540,22 +540,30 @@ class MonitoringAgent:
         if iteration in self.iteration_data:
             self.iteration_data[iteration]['strategies_tested'].append(strategy_data)
     
-    def capture_champion(self, champion_id: str, performance: Dict, strategy_code: str):
-        """Capture champion strategy"""
+    def capture_champion(self, champion_id: str, performance: Dict, strategy_code: str, strategy_metadata: Dict = None):
+        """Capture champion strategy with enhanced tracking"""
         self.champion_tracker[champion_id] = {
             'created_at': datetime.now(),
             'performance': performance,
             'strategy_code': strategy_code,
+            'strategy_metadata': strategy_metadata or {},
             'active': True,
+            'status': 'CHAMPION',  # CHAMPION -> QUALIFIED -> ELITE
+            'bankroll': 10000.0,  # Starting bankroll
+            'initial_bankroll': 10000.0,
             'total_trades': 0,
             'trades_today': 0,
+            'winning_days': 0,
+            'total_days': 0,
             'last_reset_date': datetime.now().date(),
             'current_pnl': 0.0,
-            'recent_trades': []  # Store last 50 trades
+            'realized_pnl': 0.0,
+            'recent_trades': [],  # Store last 50 trades
+            'daily_pnl_history': []  # Track daily P&L for qualification
         }
     
     def update_champion_performance(self, champion_id: str, trade_data: Dict):
-        """Update champion performance with trade data - FIXED to track properly"""
+        """Update champion performance with trade data - ENHANCED with bankroll & qualification tracking"""
         if champion_id not in self.champion_tracker:
             return
         
@@ -564,8 +572,28 @@ class MonitoringAgent:
         # Reset daily counter if new day
         today = datetime.now().date()
         if champion.get('last_reset_date') != today:
+            # Record yesterday's P&L
+            daily_pnl = champion.get('current_pnl', 0.0) - sum(
+                day.get('pnl', 0) for day in champion.get('daily_pnl_history', [])
+            )
+            champion.setdefault('daily_pnl_history', []).append({
+                'date': champion.get('last_reset_date'),
+                'pnl': daily_pnl,
+                'trades': champion.get('trades_today', 0)
+            })
+            champion['daily_pnl_history'] = champion['daily_pnl_history'][-30:]  # Keep last 30 days
+            
+            # Update winning days count
+            if daily_pnl > 0:
+                champion['winning_days'] = champion.get('winning_days', 0) + 1
+            champion['total_days'] = champion.get('total_days', 0) + 1
+            
+            # Reset daily counter
             champion['trades_today'] = 0
             champion['last_reset_date'] = today
+            
+            # Check for qualification upgrade
+            self._check_champion_qualification(champion_id)
         
         # Update with actual trade count from performance data
         new_trades = trade_data.get('trades', 0)
@@ -574,16 +602,56 @@ class MonitoringAgent:
         
         champion['total_trades'] = max(champion['total_trades'], new_trades)
         champion['trades_today'] += trades_delta
-        champion['current_pnl'] += trade_data.get('pnl', 0.0)
+        
+        # Update P&L and bankroll
+        pnl_delta = trade_data.get('pnl', 0.0)
+        champion['current_pnl'] += pnl_delta
+        champion['realized_pnl'] += pnl_delta
+        champion['bankroll'] = champion.get('initial_bankroll', 10000.0) + champion['realized_pnl']
         
         # Add to recent trades (keep last 50)
         if trades_delta > 0:
             champion.setdefault('recent_trades', []).append({
                 'timestamp': datetime.now().isoformat(),
                 'count': trades_delta,
-                'pnl': trade_data.get('pnl', 0.0)
+                'pnl': pnl_delta,
+                'bankroll': champion['bankroll']
             })
             champion['recent_trades'] = champion['recent_trades'][-50:]
+    
+    def _check_champion_qualification(self, champion_id: str):
+        """Check if champion qualifies for upgrade to QUALIFIED or ELITE status"""
+        champion = self.champion_tracker.get(champion_id)
+        if not champion:
+            return
+        
+        total_days = champion.get('total_days', 0)
+        winning_days = champion.get('winning_days', 0)
+        bankroll = champion.get('bankroll', 10000.0)
+        initial_bankroll = champion.get('initial_bankroll', 10000.0)
+        
+        current_status = champion.get('status', 'CHAMPION')
+        
+        # QUALIFIED: 7+ days trading, 60%+ winning days, 10%+ profit
+        if current_status == 'CHAMPION' and total_days >= 7:
+            win_rate_days = winning_days / total_days if total_days > 0 else 0
+            profit_pct = (bankroll - initial_bankroll) / initial_bankroll
+            
+            if win_rate_days >= 0.60 and profit_pct >= 0.10:
+                champion['status'] = 'QUALIFIED'
+                champion['qualified_at'] = datetime.now()
+                logger.info(f"🎖️ {champion_id} UPGRADED to QUALIFIED - {win_rate_days:.1%} winning days, {profit_pct:.1%} profit")
+        
+        # ELITE: 30+ days, 65%+ winning days, 30%+ profit, eligible for real trading
+        elif current_status == 'QUALIFIED' and total_days >= 30:
+            win_rate_days = winning_days / total_days if total_days > 0 else 0
+            profit_pct = (bankroll - initial_bankroll) / initial_bankroll
+            
+            if win_rate_days >= 0.65 and profit_pct >= 0.30:
+                champion['status'] = 'ELITE'
+                champion['elite_at'] = datetime.now()
+                champion['real_trading_eligible'] = True
+                logger.info(f"👑 {champion_id} UPGRADED to ELITE - REAL TRADING ELIGIBLE! {win_rate_days:.1%} winning days, {profit_pct:.1%} profit")
     
     def get_dashboard_data(self) -> Dict:
         """Get comprehensive dashboard data"""
@@ -618,17 +686,26 @@ class MonitoringAgent:
         return summaries
     
     def _get_champion_performance(self) -> List[Dict]:
-        """Get champion performance data - ENHANCED with trades_today"""
+        """Get champion performance data - ENHANCED with status, bankroll, and qualification metrics"""
         performance = []
         for champ_id, data in self.champion_tracker.items():
             perf_data = {
                 'champion_id': champ_id,
                 'created_at': data['created_at'].isoformat() if isinstance(data['created_at'], datetime) else str(data['created_at']),
                 'active': data.get('active', False),
+                'status': data.get('status', 'CHAMPION'),
+                'bankroll': data.get('bankroll', 10000.0),
+                'initial_bankroll': data.get('initial_bankroll', 10000.0),
                 'total_trades': data.get('total_trades', 0),
-                'trades_today': data.get('trades_today', 0),  # NEW: Add trades today
+                'trades_today': data.get('trades_today', 0),
                 'current_pnl': data.get('current_pnl', 0.0),
-                'performance': data.get('performance', {})
+                'realized_pnl': data.get('realized_pnl', 0.0),
+                'winning_days': data.get('winning_days', 0),
+                'total_days': data.get('total_days', 0),
+                'win_rate_days': (data.get('winning_days', 0) / data.get('total_days', 1)) if data.get('total_days', 0) > 0 else 0,
+                'performance': data.get('performance', {}),
+                'strategy_metadata': data.get('strategy_metadata', {}),
+                'real_trading_eligible': data.get('real_trading_eligible', False)
             }
             performance.append(perf_data)
         return performance
@@ -653,6 +730,40 @@ class MonitoringAgent:
         self.system_health['last_heartbeat'] = datetime.now()
         self.system_health['active_threads'] = threading.active_count()
         return self.system_health
+    
+    def get_champions_detailed(self) -> List[Dict]:
+        """Get detailed champion information for viewing - NEW METHOD"""
+        champions = []
+        for champ_id, data in self.champion_tracker.items():
+            # Calculate metrics
+            bankroll = data.get('bankroll', 10000.0)
+            initial = data.get('initial_bankroll', 10000.0)
+            profit_pct = ((bankroll - initial) / initial * 100) if initial > 0 else 0
+            
+            champion_info = {
+                'id': champ_id,
+                'status': data.get('status', 'CHAMPION'),
+                'active': data.get('active', False),
+                'bankroll': f"${bankroll:,.2f}",
+                'profit_loss': f"${bankroll - initial:+,.2f}",
+                'profit_pct': f"{profit_pct:+.2f}%",
+                'total_trades': data.get('total_trades', 0),
+                'trades_today': data.get('trades_today', 0),
+                'winning_days': data.get('winning_days', 0),
+                'total_days': data.get('total_days', 0),
+                'win_rate_days': f"{(data.get('winning_days', 0) / data.get('total_days', 1) * 100) if data.get('total_days', 0) > 0 else 0:.1f}%",
+                'created_at': data['created_at'].strftime('%Y-%m-%d %H:%M') if isinstance(data['created_at'], datetime) else str(data['created_at']),
+                'real_trading_eligible': '✅ YES' if data.get('real_trading_eligible', False) else '❌ NO',
+                'strategy_metadata': data.get('strategy_metadata', {}),
+                'recent_performance': data.get('performance', {})
+            }
+            champions.append(champion_info)
+        
+        # Sort by status priority (ELITE > QUALIFIED > CHAMPION) then by bankroll
+        status_priority = {'ELITE': 0, 'QUALIFIED': 1, 'CHAMPION': 2}
+        champions.sort(key=lambda x: (status_priority.get(x['status'], 99), -float(x['profit_loss'].replace('$', '').replace(',', '').replace('+', ''))))
+        
+        return champions
 
 # =========================================================================================
 # CONFIGURATION FUNCTIONS - MOVED UP TO PREVENT NameError
@@ -1980,18 +2091,30 @@ Return full code for {path}.
                 profit_factor >= 0.5 and     # CHANGED: Accept losing strategies (was 1.2)
                 max_drawdown <= 0.99)        # CHANGED: Accept high drawdown (was 0.30)
 
-    def _start_continuous_trading(self, project_dir: str, champion_id: str):
+    def _start_continuous_trading(self, project_dir: str, champion_id: str, performance_data: Dict = None):
         """🎯 Start champion trading in background"""
         
         # Auto-start monitoring API when first champion is produced
         if not self.monitoring_api_started:
             self._start_monitoring_api()
         
-        # Capture champion in monitoring
+        # Extract strategy metadata from plan or generated files
+        strategy_metadata = {
+            'project_dir': project_dir,
+            'symbols': ['btcusdt', 'ethusdt', 'bnbusdt'],  # Default, should be from plan
+            'strategy_type': 'MULTI_ASSET',
+            'timeframes': ['1h', '4h'],
+            'trade_type': 'PAPER_FUTURES_LONG_SHORT',
+            'risk_tier': 'MEDIUM',
+            'initial_performance': performance_data or {}
+        }
+        
+        # Capture champion in monitoring with enhanced metadata
         self.monitoring_agent.capture_champion(
             champion_id=champion_id,
-            performance={},
-            strategy_code="Champion strategy"
+            performance=performance_data or {},
+            strategy_code="Champion strategy",
+            strategy_metadata=strategy_metadata
         )
         
         def trade_loop():
@@ -2136,23 +2259,48 @@ async def get_agent_activities():
 
 @app.get("/api/champions")
 async def get_champions():
-    """Get all champion strategies"""
+    """Get all champions with detailed info"""
     if monitoring_agent is None:
         return {"error": "Monitoring agent not initialized"}
     return {
-        "champions": monitoring_agent.champion_tracker,
-        "total_count": len(monitoring_agent.champion_tracker)
+        "champions": monitoring_agent.get_champions_detailed(),
+        "summary": {
+            "total": len(monitoring_agent.champion_tracker),
+            "active": len([c for c in monitoring_agent.champion_tracker.values() if c.get('active')]),
+            "elite": len([c for c in monitoring_agent.champion_tracker.values() if c.get('status') == 'ELITE']),
+            "qualified": len([c for c in monitoring_agent.champion_tracker.values() if c.get('status') == 'QUALIFIED']),
+            "champions": len([c for c in monitoring_agent.champion_tracker.values() if c.get('status') == 'CHAMPION']),
+            "real_trading_eligible": len([c for c in monitoring_agent.champion_tracker.values() if c.get('real_trading_eligible')])
+        }
     }
 
 @app.get("/api/champions/{champion_id}")
 async def get_champion(champion_id: str):
-    """Get specific champion details"""
+    """Get detailed info for a specific champion"""
     if monitoring_agent is None:
         return {"error": "Monitoring agent not initialized"}
-    champion_data = monitoring_agent.champion_tracker.get(champion_id)
-    if champion_data is None:
+    champion = monitoring_agent.champion_tracker.get(champion_id)
+    if champion is None:
         return {"error": f"Champion {champion_id} not found"}
-    return champion_data
+    
+    return {
+        "champion_id": champion_id,
+        "status": champion.get('status', 'CHAMPION'),
+        "active": champion.get('active', False),
+        "bankroll": champion.get('bankroll', 10000.0),
+        "initial_bankroll": champion.get('initial_bankroll', 10000.0),
+        "total_trades": champion.get('total_trades', 0),
+        "trades_today": champion.get('trades_today', 0),
+        "winning_days": champion.get('winning_days', 0),
+        "total_days": champion.get('total_days', 0),
+        "current_pnl": champion.get('current_pnl', 0.0),
+        "realized_pnl": champion.get('realized_pnl', 0.0),
+        "strategy_metadata": champion.get('strategy_metadata', {}),
+        "performance": champion.get('performance', {}),
+        "recent_trades": champion.get('recent_trades', [])[-10:],  # Last 10 trades
+        "daily_pnl_history": champion.get('daily_pnl_history', [])[-30:],  # Last 30 days
+        "real_trading_eligible": champion.get('real_trading_eligible', False)
+    }
 
 @app.get("/api/health")
 async def get_health():
@@ -2779,7 +2927,7 @@ if __name__ == "__main__":
                     self._log_phase_progress("champion", iteration, "success", f"New champion: {champion_id}")
 
                     # 🎯 START CONTINUOUS TRADING for this champion
-                    self._start_continuous_trading(project_dir, champion_id)
+                    self._start_continuous_trading(project_dir, champion_id, performance_data)
                     
                     # Mark iteration as successful
                     self.monitoring_agent.capture_iteration_end(iteration, {
@@ -3896,6 +4044,24 @@ def main():
     except Exception as e:
         logger.exception("Pipeline failure")
         raise
+
+def list_champions():
+    """Utility function to list all champions - can be called separately"""
+    print("=" * 80)
+    print("🏆 CHAMPION STATUS REPORT")
+    print("=" * 80)
+    
+    # This would need to connect to the running system or load from persistence
+    # For now, show how to check via API
+    print("\n💡 To view champions, use one of these methods:")
+    print("   1. Check dashboard: http://localhost:8000")
+    print("   2. Query API: curl http://localhost:8000/api/champions")
+    print("   3. View logs: tail -f logs/bot_execution_*.log | grep CHAMPION")
+    print("\n📊 Champion Status Levels:")
+    print("   🥉 CHAMPION: New champion, $10K bankroll, paper trading")
+    print("   🥈 QUALIFIED: 7+ days, 60%+ winning days, 10%+ profit")
+    print("   🥇 ELITE: 30+ days, 65%+ winning days, 30%+ profit → REAL TRADING ELIGIBLE")
+    print("=" * 80)
 
 if __name__ == "__main__":
     main()
