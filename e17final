@@ -1769,14 +1769,59 @@ class E22MinTradesEnforcedSystem:
 """.strip()
 
         sys_prompt = (
-            "You are a CHIEF QUANT ARCHITECT creating a JSON execution plan for the next iteration.\n"
+            "You are a CHIEF QUANT ARCHITECT creating LEVERAGED CRYPTO ALPHA STRATEGIES for HTX.\n"
+            "CRITICAL MISSION: Design strategies that hunt for high-conviction alpha using leverage.\n"
             "Rules:\n"
             "- Output ONLY valid JSON (no markdown).\n"
             "- files array MUST include 'main.py' and 'strategies.py' with clear purposes/notes.\n"
-            "- If trade frequency low/zero, include strategy_adjustments with 'loosen_thresholds'.\n"
+            "- FOCUS on leveraged trading opportunities (3-10x leverage on HTX futures).\n"
+            "- Target 5+ trades daily per strategy with proper risk management.\n"
+            "- Include ATR-based position sizing and hard stop losses (2-3% max per trade).\n"
             "- No placeholders; everything implementable this iteration.\n"
-            "- Include regeneration_policy and risk_tuning if relevant.\n"
         )
+
+        leverage_alpha_guidance = """
+CORE ALPHA TYPES TO HUNT:
+1. **FUTURES FUNDING ARBITRAGE**
+   - Long spot/short perpetual when funding > 0.1%
+   - Short spot/long perpetual when funding < -0.1%
+   - Use 3-5x leverage for risk-controlled arbitrage
+
+2. **VOLATILITY EXPLOSION TRADES**
+   - Position before expected volatility events
+   - Use 2-3x leverage, target 5-15% moves
+   - Catalysts: Fed meetings, CPI data, ETF approvals, major news
+
+3. **LIQUIDITY ZONE BREAKOUTS**
+   - Identify key HTX liquidity levels from order book depth
+   - Trade breakouts with 3-5x leverage
+   - Stop loss below liquidity clusters
+
+4. **WHALE FLOW MIRRORING**
+   - Track large HTX transfers (>1M USDT)
+   - Mirror institutional entry points with 2-4x leverage
+   - Use on-chain + order book confirmation
+
+REQUIRED STRATEGY COMPONENTS:
+- Leverage: 3-10x on HTX futures (dynamic based on volatility)
+- Trade Frequency: Target 5+ trades daily
+- Position Sizing: ATR-based, scale with confidence
+- Risk Management: Hard stop losses at 2-3% per trade
+- Funding Awareness: Monitor and exploit funding rate extremes
+
+PERFORMANCE TARGETS:
+- Win Rate: 55-70%
+- Profit Factor: 1.8-3.0
+- Daily Return Target: 1-5%
+- Max Drawdown: <15%
+
+HTX-SPECIFIC EDGES:
+- Chinese market hours volatility patterns
+- HTX new token listings (pump detection)
+- Cross-margin opportunities
+- HTX vs Binance basis trades
+- Lower liquidity = bigger moves potential
+"""
 
         user_prompt = f"""
 PERFORMANCE_DATA={perf_json}
@@ -1786,6 +1831,10 @@ ERROR_TAIL={error_tail}
 MIN_TRADES_TARGET={self.min_trades_target}
 CURRENT_MODE={current_mode}
 ALPHA_SCORE={alpha_score}
+
+LEVERAGE ALPHA STRATEGY REQUIREMENTS:
+{leverage_alpha_guidance}
+
 E24_REAL_ENGINE_REQUIREMENTS:
 {e24_requirements}
 
@@ -2025,31 +2074,63 @@ require_real_data (bool, true to forbid synthetic sources).
                 )
             if path == "strategies.py":
                 return (
-                    "HARD CONTRACT REQUIREMENTS:\n"
+                    "LEVERAGED CRYPTO ALPHA STRATEGIES - HARD CONTRACT REQUIREMENTS:\n"
                     "- File MUST define:\n"
                     "    class AdaptiveTradingStrategy:\n"
                     "        def generate_signals(self, market_data: Dict[str, pd.DataFrame]) -> List[Dict]:\n"
                     "            ...\n"
-                    "- generate_signals MUST return a non-empty list of trade dicts on typical intraday OHLCV noise:\n"
+                    "- generate_signals MUST return trade signals with LEVERAGE information:\n"
                     "    {\n"
                     "      \"symbol\": str,\n"
-                    "      \"action\": \"BUY\" or \"SELL\",\n"
+                    "      \"action\": \"BUY\" or \"SELL\" or \"LONG\" or \"SHORT\",\n"
                     "      \"price\": float,\n"
-                    "      \"strategy\": str\n"
+                    "      \"leverage\": float (3-10x, dynamic based on volatility/confidence),\n"
+                    "      \"position_size\": float (ATR-based sizing),\n"
+                    "      \"stop_loss\": float (2-3% max loss),\n"
+                    "      \"take_profit\": float (risk:reward 1:2 or better),\n"
+                    "      \"strategy\": str (e.g., 'funding_arb', 'volatility_breakout', 'whale_mirror'),\n"
+                    "      \"confidence\": float (0-1, higher = more leverage)\n"
                     "    }\n"
+                    "\n"
+                    "LEVERAGE STRATEGY IMPLEMENTATION:\n"
+                    "1. **Multi-Timeframe Leverage Adjustment**\n"
+                    "   - Higher leverage on lower timeframes (5min: 5-8x)\n"
+                    "   - Lower leverage on higher timeframes (1h: 2-3x)\n"
+                    "   - Scale with ATR: low volatility = higher leverage\n"
+                    "\n"
+                    "2. **HTX Futures-Specific Features**\n"
+                    "   - Funding rate monitoring (exploit extremes >0.1% or <-0.1%)\n"
+                    "   - Liquidation level tracking (avoid cascades)\n"
+                    "   - Cross-margin vs isolated margin selection\n"
+                    "   - Position pyramiding on strong trends\n"
+                    "\n"
+                    "3. **Alpha Signal Generation** (implement at least 2):\n"
+                    "   a) FUNDING ARBITRAGE: Detect funding >0.1%/< -0.1%, generate opposite positions\n"
+                    "   b) LIQUIDITY BREAKOUTS: Parse order book, trade breakouts above/below key levels\n"
+                    "   c) VOLATILITY EXPANSION: ATR compression → expected expansion, position ahead\n"
+                    "   d) WHALE FLOW: Large order flow detection → mirror with 2-4x leverage\n"
+                    "\n"
+                    "4. **Risk Management** (CRITICAL):\n"
+                    "   - ATR-based position sizing: size = capital * risk_per_trade / (ATR * leverage)\n"
+                    "   - Hard stop loss: 2-3% max loss per trade (enforced)\n"
+                    "   - Take profit: minimum 1:2 risk/reward\n"
+                    "   - Max open positions: 3-5 simultaneous\n"
+                    "   - Daily loss limit: 5-10% of capital\n"
+                    "\n"
+                    "5. **Performance Optimization**:\n"
+                    "   - Target 5+ signals daily (high frequency)\n"
+                    "   - Win rate target: 55-70%\n"
+                    "   - Profit factor target: 1.8-3.0\n"
+                    "   - Use features.py for technical indicators\n"
+                    "\n"
                     "- You MAY additionally define:\n"
                     "    - BaseStrategy\n"
                     "    - build_strategy_universe(config: Dict[str, Any]) -> List[BaseStrategy]\n"
-                    "  for E23/E24 research, BUT NOT at the expense of AdaptiveTradingStrategy.\n"
-                    "- If you define a strategy universe, AdaptiveTradingStrategy may internally:\n"
-                    "    - build it via build_strategy_universe(...)\n"
-                    "    - aggregate signals from multiple strategies\n"
-                    "  but AdaptiveTradingStrategy MUST still exist and be callable directly.\n"
-                    "- DO NOT replace this file with generic utility functions only (e.g. datetime helpers).\n"
-                    "- DO NOT remove or rename AdaptiveTradingStrategy.\n"
-                    "- from strategies_base import BaseStrategy if present; else define an inline BaseStrategy matching our contract.\n"
-                    "- Provide multiple strategies across risk tiers; use features from features.py; implement build_strategy_universe(config)->List[BaseStrategy].\n"
-                    "- No external libs; signals must use only provided market_data and computed features.\n"
+                    "  for multi-strategy portfolios.\n"
+                    "- AdaptiveTradingStrategy MUST still exist and be callable directly.\n"
+                    "- DO NOT replace this file with generic utility functions.\n"
+                    "- Implement concrete alpha signals, not just random noise.\n"
+                    "- Focus on HTX market microstructure and leverage opportunities.\n"
                 )
             if path == "main.py":
                 return (
@@ -2071,9 +2152,12 @@ require_real_data (bool, true to forbid synthetic sources).
                 continue
 
             sys_prompt = (
-                "You are a SENIOR PYTHON QUANT IMPLEMENTER.\n"
+                "You are a SENIOR PYTHON QUANT IMPLEMENTER specializing in LEVERAGED CRYPTO STRATEGIES.\n"
+                "Focus on HTX futures trading with 3-10x leverage.\n"
                 "Return ONLY raw Python code for the requested file.\n"
                 "No markdown fences. No external commentary. No placeholders.\n"
+                "Implement concrete alpha signals: funding arbitrage, liquidity breakouts, volatility expansion.\n"
+                "Include proper risk management: ATR-based sizing, hard stop losses, leverage scaling.\n"
             )
             lc = file_constraints(path)
             user_prompt = f"""
