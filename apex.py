@@ -630,6 +630,187 @@ class ModelFactory:
 logger.info("✅ Model Factory initialized (5 LLM providers supported)")
 
 # =========================================================================================
+# HTX DATA FETCHER - REAL MARKET DATA (NO SAMPLE DATA!)
+# =========================================================================================
+
+class HTXDataFetcher:
+    """
+    Fetch real market data from HTX (Huobi) exchange
+    Downloads OHLCV candles and saves to CSV for backtesting
+    """
+    
+    def __init__(self):
+        self.logger = logging.getLogger("APEX.DATA-FETCHER")
+        self.base_url = Config.HTX_BASE_URL
+        self.data_dir = Config.MARKET_DATA_PATH
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        
+    def fetch_and_save_data(self, symbol: str = "btcusdt", period: str = "15min", 
+                           count: int = 2000) -> Optional[Path]:
+        """
+        Fetch OHLCV data from HTX and save to CSV
+        
+        Args:
+            symbol: Trading pair (e.g., "btcusdt", "ethusdt")
+            period: Candle period (1min, 5min, 15min, 60min, 4hour, 1day)
+            count: Number of candles to fetch (max 2000 per request)
+            
+        Returns:
+            Path to saved CSV file
+        """
+        try:
+            self.logger.info(f"📊 Fetching {symbol.upper()} {period} data from HTX...")
+            
+            # HTX API endpoint for historical klines
+            endpoint = f"{self.base_url}/market/history/kline"
+            params = {
+                "symbol": symbol,
+                "period": period,
+                "size": count
+            }
+            
+            # Make request
+            response = requests.get(endpoint, params=params, timeout=30)
+            
+            if response.status_code != 200:
+                self.logger.error(f"HTX API error: {response.status_code}")
+                return None
+            
+            data = response.json()
+            
+            if data.get("status") != "ok":
+                self.logger.error(f"HTX API returned error: {data.get('err-msg', 'Unknown error')}")
+                return None
+            
+            klines = data.get("data", [])
+            
+            if not klines:
+                self.logger.warning("No data returned from HTX")
+                return None
+            
+            # Convert to DataFrame
+            df = pd.DataFrame(klines)
+            
+            # HTX returns: id (timestamp), open, close, high, low, amount (volume), vol (volume in quote), count
+            # Rename columns to standard format
+            df = df.rename(columns={
+                'id': 'timestamp',
+                'open': 'open',
+                'high': 'high', 
+                'low': 'low',
+                'close': 'close',
+                'amount': 'volume'  # volume in base currency
+            })
+            
+            # Select only needed columns
+            df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
+            
+            # Convert timestamp to datetime
+            df['datetime'] = pd.to_datetime(df['timestamp'], unit='s')
+            
+            # Reorder columns
+            df = df[['datetime', 'open', 'high', 'low', 'close', 'volume']]
+            
+            # Sort by datetime (HTX returns newest first, we want oldest first)
+            df = df.sort_values('datetime').reset_index(drop=True)
+            
+            # Save to CSV
+            symbol_upper = symbol.replace('usdt', '').upper()
+            period_map = {
+                '1min': '1m', '5min': '5m', '15min': '15m', 
+                '60min': '1H', '4hour': '4H', '1day': '1D'
+            }
+            period_str = period_map.get(period, period)
+            
+            filename = f"{symbol_upper}-USD-{period_str}.csv"
+            filepath = self.data_dir / filename
+            
+            df.to_csv(filepath, index=False)
+            
+            self.logger.info(f"✅ Saved {len(df)} candles to {filename}")
+            self.logger.info(f"   Date range: {df['datetime'].iloc[0]} to {df['datetime'].iloc[-1]}")
+            
+            return filepath
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Network error fetching data: {e}")
+            return None
+        except Exception as e:
+            self.logger.error(f"Error fetching HTX data: {e}")
+            self.logger.error(traceback.format_exc())
+            return None
+    
+    def ensure_data_exists(self, symbol: str = "btcusdt", period: str = "15min") -> Path:
+        """
+        Ensure data file exists, fetch if needed
+        
+        Returns:
+            Path to data file (existing or newly fetched)
+        """
+        symbol_upper = symbol.replace('usdt', '').upper()
+        period_map = {
+            '1min': '1m', '5min': '5m', '15min': '15m',
+            '60min': '1H', '4hour': '4H', '1day': '1D'
+        }
+        period_str = period_map.get(period, period)
+        
+        filename = f"{symbol_upper}-USD-{period_str}.csv"
+        filepath = self.data_dir / filename
+        
+        # Check if file exists and is recent (< 1 day old)
+        if filepath.exists():
+            file_age = time.time() - filepath.stat().st_mtime
+            if file_age < 86400:  # 24 hours
+                self.logger.info(f"✅ Using existing data file: {filename}")
+                return filepath
+            else:
+                self.logger.info(f"📊 Data file older than 24h, refreshing...")
+        
+        # Fetch new data
+        result = self.fetch_and_save_data(symbol, period, count=2000)
+        
+        if result:
+            return result
+        else:
+            # If fetch fails, use existing file if available
+            if filepath.exists():
+                self.logger.warning(f"⚠️ Using stale data file: {filename}")
+                return filepath
+            else:
+                self.logger.error(f"❌ No data available for {symbol}")
+                return None
+    
+    def fetch_multiple_assets(self, symbols: List[str] = None, period: str = "15min"):
+        """Fetch data for multiple trading pairs"""
+        if symbols is None:
+            symbols = ["btcusdt", "ethusdt", "solusdt"]
+        
+        self.logger.info(f"📊 Fetching data for {len(symbols)} assets...")
+        
+        results = {}
+        for symbol in symbols:
+            filepath = self.ensure_data_exists(symbol, period)
+            if filepath:
+                results[symbol] = filepath
+            time.sleep(0.5)  # Rate limiting
+        
+        self.logger.info(f"✅ Fetched {len(results)}/{len(symbols)} assets successfully")
+        return results
+
+# Initialize data fetcher
+data_fetcher = HTXDataFetcher()
+
+# Fetch initial data on startup (BTC, ETH, SOL)
+logger.info("📊 Initializing market data...")
+try:
+    data_fetcher.fetch_multiple_assets(["btcusdt", "ethusdt", "solusdt"], period="15min")
+except Exception as e:
+    logger.warning(f"⚠️ Initial data fetch failed: {e}")
+    logger.warning("   System will continue, but backtests may use stale/missing data")
+
+logger.info("✅ HTX Data Fetcher initialized")
+
+# =========================================================================================
 # THREAD-SAFE QUEUES & GLOBAL STATE (E17FINAL Pattern)
 # =========================================================================================
 
@@ -3429,11 +3610,26 @@ RISK MANAGEMENT:
 
 If you need indicators use TA lib or pandas TA.
 
-Use this data path: {PROJECT_ROOT}/data/market_data/BTC-USD-15m.csv (use absolute path in code)
-The above data head looks like below:
-datetime, open, high, low, close, volume,
-2023-01-01 00:00:00, 16531.83, 16532.69, 16509.11, 16510.82, 231.05338022,
-2023-01-01 00:15:00, 16509.78, 16534.66, 16509.11, 16533.43, 308.12276951,
+CRITICAL DATA LOADING:
+- Data path: {Config.BTC_DATA_PATH} (this is the REAL path from HTX exchange)
+- Data is ALREADY FETCHED from HTX API with real market data
+- CSV format: datetime, open, high, low, close, volume
+- datetime column should be parsed as index with pd.read_csv(path, parse_dates=['datetime'], index_col='datetime')
+
+Example data loading:
+```python
+import pandas as pd
+from pathlib import Path
+
+data_path = Path('{Config.BTC_DATA_PATH}')
+if not data_path.exists():
+    raise FileNotFoundError(f"Data file not found: {{data_path}}")
+
+df = pd.read_csv(data_path, parse_dates=['datetime'], index_col='datetime')
+# Columns will be: open, high, low, close, volume
+```
+
+DO NOT generate sample data - use the actual CSV file from HTX API!
 
 Always add plenty of Moon Dev themed debug prints with emojis to make debugging easier! 🌙 ✨ 🚀
 
@@ -3459,25 +3655,33 @@ The CSV file has these exact columns after processing:
 
 COMMON ERRORS AND FIXES:
 
-1. Column Name Issues:
+1. File Not Found Error:
+   ❌ FileNotFoundError: [Errno 2] No such file or directory: '/some/path/BTC-USD-15m.csv'
+   ✅ FIX: Use the correct data path from Config.BTC_DATA_PATH
+   ✅ Always use: data_path = Path('{Config.BTC_DATA_PATH}')
+   ✅ Check if file exists before loading
+   
+2. Column Name Issues:
    ❌ df['Close']  # Capital C
    ✅ df['close']  # lowercase
 
-2. Indicator Wrapper Issues:
+3. Indicator Wrapper Issues:
    ❌ sma = self.data.Close.rolling(20).mean()
    ✅ sma = self.I(talib.SMA, self.data.Close, timeperiod=20)
 
-3. Position Sizing Issues:
+4. Position Sizing Issues:
    ❌ self.buy(size=3546.0993)
    ✅ self.buy(size=int(round(3546.0993)))
 
-4. Index Issues:
+5. Index Issues:
    ❌ if self.data.index[-1] > len(self.data) - 20:
    ✅ if len(self.data) < 20:
 
-5. Division by Zero:
+6. Division by Zero:
    ❌ position_size = risk / stop_distance
    ✅ position_size = risk / stop_distance if stop_distance > 0 else 0
+
+IMPORTANT: NEVER generate sample data! Always use the REAL data file from HTX API at {Config.BTC_DATA_PATH}
 
 Return ONLY the fixed Python code, no explanations.
 The code MUST execute without errors.
