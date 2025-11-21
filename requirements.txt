@@ -1,0 +1,53 @@
+# =========================================================================================
+# APEX SYSTEM DEPENDENCIES
+# =========================================================================================
+
+# Core Python packages
+python-dotenv==1.0.0
+requests==2.31.0
+
+# AI/LLM Libraries
+openai==1.12.0
+anthropic==0.40.0
+google-generativeai==0.8.3
+
+# Web Search
+tavily-python==0.3.0
+
+# FastAPI & Server
+fastapi==0.115.5
+uvicorn==0.32.1
+pydantic==2.12.1
+
+# Data Processing
+pandas==2.1.4
+numpy==1.26.2
+python-dateutil==2.8.2
+
+# Backtesting
+backtesting==0.3.3
+ta-lib==0.4.32
+pandas-ta==0.3.14b0
+ccxt==4.2.87
+
+# Terminal/Display
+termcolor==2.3.0
+colorama==0.4.6
+
+# Threading & Queues
+threading (built-in)
+queue (built-in)
+
+# Logging
+logging (built-in)
+
+# JSON/Data
+json (built-in)
+
+# Time/Date
+datetime (built-in)
+time (built-in)
+
+# Utility
+pathlib (built-in)
+hashlib (built-in)
