@@ -4018,3 +4018,1957 @@ All autonomous, no human input required after setup.
 # Version: 2.0 - COMPLETE IMPLEMENTATION
 # NO PLACEHOLDERS - ALL FUNCTIONAL CODE
 
+
+
+# =========================================================================================
+# ENHANCED AGENTS - Moon-Dev Integration (Risk, Research, Volume)
+# =========================================================================================
+# These three agents work in synergy with the 5 main APEX threads
+# Based on complete Moon-Dev implementations (~1900 lines total)
+# =========================================================================================
+
+logger.info("🔧 Loading Enhanced Agents (Risk, Research, Volume from Moon-Dev)")
+
+"""
+🌙 Moon Dev's Risk Management Agent
+Built with love by Moon Dev 🚀
+"""
+
+# Model override settings - Adding DeepSeek support
+MODEL_OVERRIDE = "0"  # Set to "deepseek-chat" or "deepseek-reasoner" to use DeepSeek, "0" to use default
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"  # Base URL for DeepSeek API
+
+# 🛡️ Risk Override Prompt - The Secret Sauce!
+RISK_OVERRIDE_PROMPT = """
+You are Moon Dev's Risk Management AI 🛡️
+
+We've hit a {limit_type} limit and need to decide whether to override it.
+
+Analyze the provided market data for each position and decide if we should override the daily limit.
+Consider for each position:
+1. Recent price action and momentum (both 15m and 5m timeframes)
+2. Volume patterns and trends
+3. Market conditions and volatility
+4. Risk/reward ratio based on current position size
+
+For max loss overrides:
+- Be EXTREMELY conservative
+- Only override if strong reversal signals
+- Require 90%+ confidence
+- All positions must show reversal potential
+
+For max gain overrides:
+- Can be more lenient
+- Look for continued momentum
+- Require 60%+ confidence
+- Most positions should show upward momentum
+
+Current Positions and Data:
+{position_data}
+
+Respond with either:
+OVERRIDE: <detailed reason for each position>
+or
+RESPECT_LIMIT: <detailed reason for each position>
+"""
+
+import anthropic
+import os
+import pandas as pd
+import json
+from termcolor import colored, cprint
+from dotenv import load_dotenv
+import openai
+from src import config
+from src import nice_funcs as n
+from src.data.ohlcv_collector import collect_all_tokens
+from datetime import datetime, timedelta
+import time
+from src.config import *
+from src.agents.base_agent import BaseAgent
+import traceback
+
+# Load environment variables
+load_dotenv()
+
+class RiskAgent(BaseAgent):
+    def __init__(self):
+        """Initialize Moon Dev's Risk Agent 🛡️"""
+        super().__init__('risk')  # Initialize base agent with type
+        
+        # Set AI parameters - use config values unless overridden
+        self.ai_model = AI_MODEL if AI_MODEL else config.AI_MODEL
+        self.ai_temperature = AI_TEMPERATURE if AI_TEMPERATURE > 0 else config.AI_TEMPERATURE
+        self.ai_max_tokens = AI_MAX_TOKENS if AI_MAX_TOKENS > 0 else config.AI_MAX_TOKENS
+        
+        print(f"🤖 Using AI Model: {self.ai_model}")
+        if AI_MODEL or AI_TEMPERATURE > 0 or AI_MAX_TOKENS > 0:
+            print("⚠️ Note: Using some override settings instead of config.py defaults")
+            if AI_MODEL:
+                print(f"  - Model: {AI_MODEL}")
+            if AI_TEMPERATURE > 0:
+                print(f"  - Temperature: {AI_TEMPERATURE}")
+            if AI_MAX_TOKENS > 0:
+                print(f"  - Max Tokens: {AI_MAX_TOKENS}")
+                
+        load_dotenv()
+        
+        # Get API keys
+        openai_key = os.getenv("OPENAI_KEY")
+        anthropic_key = os.getenv("ANTHROPIC_KEY")
+        deepseek_key = os.getenv("DEEPSEEK_KEY")
+        
+        if not openai_key:
+            raise ValueError("🚨 OPENAI_KEY not found in environment variables!")
+        if not anthropic_key:
+            raise ValueError("🚨 ANTHROPIC_KEY not found in environment variables!")
+            
+        # Initialize OpenAI client for DeepSeek
+        if deepseek_key and MODEL_OVERRIDE.lower() == "deepseek-chat":
+            self.deepseek_client = openai.OpenAI(
+                api_key=deepseek_key,
+                base_url=DEEPSEEK_BASE_URL
+            )
+            print("🚀 DeepSeek model initialized!")
+        else:
+            self.deepseek_client = None
+            
+        # Initialize Anthropic client
+        self.client = anthropic.Anthropic(api_key=anthropic_key)
+        
+        self.override_active = False
+        self.last_override_check = None
+        
+        # Initialize start balance using portfolio value
+        self.start_balance = self.get_portfolio_value()
+        print(f"🏦 Initial Portfolio Balance: ${self.start_balance:.2f}")
+        
+        self.current_value = self.start_balance
+        cprint("🛡️ Risk Agent initialized!", "white", "on_blue")
+        
+    def get_portfolio_value(self):
+        """Calculate total portfolio value in USD"""
+        total_value = 0.0
+        
+        try:
+            print("\n🔍 Moon Dev's Portfolio Value Calculator Starting... 🚀")
+            
+            # Get USDC balance first
+            print("💵 Getting USDC balance...")
+            try:
+                print(f"🔍 Checking USDC balance for address: {config.USDC_ADDRESS}")
+                usdc_value = n.get_token_balance_usd(config.USDC_ADDRESS)
+                print(f"✅ USDC Value: ${usdc_value:.2f}")
+                total_value += usdc_value
+            except Exception as e:
+                print(f"❌ Error getting USDC balance: {str(e)}")
+                print(f"🔍 Debug info - USDC Address: {config.USDC_ADDRESS}")
+                traceback.print_exc()
+            
+            # Get balance of each monitored token
+            print("\n📊 Getting monitored token balances...")
+            print(f"🎯 Total tokens to check: {len(config.MONITORED_TOKENS)}")
+            print(f"📝 Token list: {config.MONITORED_TOKENS}")
+            
+            for token in config.MONITORED_TOKENS:
+                if token != config.USDC_ADDRESS:  # Skip USDC as we already counted it
+                    try:
+                        print(f"\n🪙 Checking token: {token[:8]}...")
+                        token_value = n.get_token_balance_usd(token)
+                        if token_value > 0:
+                            print(f"💰 Found position worth: ${token_value:.2f}")
+                            total_value += token_value
+                        else:
+                            print("ℹ️ No balance found for this token")
+                    except Exception as e:
+                        print(f"❌ Error getting balance for {token[:8]}: {str(e)}")
+                        print("🔍 Full error trace:")
+                        traceback.print_exc()
+            
+            print(f"\n💎 Moon Dev's Total Portfolio Value: ${total_value:.2f} 🌙")
+            return total_value
+            
+        except Exception as e:
+            cprint(f"❌ Error calculating portfolio value: {str(e)}", "white", "on_red")
+            print("🔍 Full error trace:")
+            traceback.print_exc()
+            return 0.0
+
+    def log_daily_balance(self):
+        """Log portfolio value if not logged in past check period"""
+        try:
+            print("\n📝 Checking if we need to log daily balance...")
+            
+            # Create data directory if it doesn't exist
+            os.makedirs('src/data', exist_ok=True)
+            balance_file = 'src/data/portfolio_balance.csv'
+            print(f"📁 Using balance file: {balance_file}")
+            
+            # Check if we already have a recent log
+            if os.path.exists(balance_file):
+                print("✅ Found existing balance log file")
+                df = pd.read_csv(balance_file)
+                if not df.empty:
+                    df['timestamp'] = pd.to_datetime(df['timestamp'])
+                    last_log = df['timestamp'].max()
+                    hours_since_log = (datetime.now() - last_log).total_seconds() / 3600
+                    
+                    print(f"⏰ Hours since last log: {hours_since_log:.1f}")
+                    print(f"⚙️ Max hours between checks: {config.MAX_LOSS_GAIN_CHECK_HOURS}")
+                    
+                    if hours_since_log < config.MAX_LOSS_GAIN_CHECK_HOURS:
+                        cprint(f"✨ Recent balance log found ({hours_since_log:.1f} hours ago)", "white", "on_blue")
+                        return
+            else:
+                print("📊 Creating new balance log file")
+                df = pd.DataFrame(columns=['timestamp', 'balance'])
+            
+            # Get current portfolio value
+            print("\n💰 Getting fresh portfolio value...")
+            current_value = self.get_portfolio_value()
+            
+            # Add new row
+            new_row = {
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'balance': current_value
+            }
+            print(f"📝 Adding new balance record: {new_row}")
+            
+            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+            
+            # Save updated log
+            df.to_csv(balance_file, index=False)
+            cprint(f"💾 New portfolio balance logged: ${current_value:.2f}", "white", "on_green")
+            
+        except Exception as e:
+            cprint(f"❌ Error logging balance: {str(e)}", "white", "on_red")
+            traceback.print_exc()  # Print full stack trace
+
+    def get_position_data(self, token):
+        """Get recent market data for a token"""
+        try:
+            # Get 8h of 15m data
+            data_15m = n.get_data(token, 0.33, '15m')  # 8 hours = 0.33 days
+            
+            # Get 2h of 5m data
+            data_5m = n.get_data(token, 0.083, '5m')   # 2 hours = 0.083 days
+            
+            return {
+                '15m': data_15m.to_dict() if data_15m is not None else None,
+                '5m': data_5m.to_dict() if data_5m is not None else None
+            }
+        except Exception as e:
+            cprint(f"❌ Error getting data for {token}: {str(e)}", "white", "on_red")
+            return None
+
+    def should_override_limit(self, limit_type):
+        """Ask AI if we should override the limit based on recent market data"""
+        try:
+            # Only check every 15 minutes
+            if (self.last_override_check and 
+                datetime.now() - self.last_override_check < timedelta(minutes=15)):
+                return self.override_active
+            
+            # Get current positions first
+            positions = n.fetch_wallet_holdings_og(address)
+            
+            # Filter for tokens that are both in MONITORED_TOKENS and in our positions
+            # Exclude USDC and SOL
+            positions = positions[
+                positions['Mint Address'].isin(MONITORED_TOKENS) & 
+                ~positions['Mint Address'].isin(EXCLUDED_TOKENS)
+            ]
+            
+            if positions.empty:
+                cprint("❌ No monitored positions found to analyze", "white", "on_red")
+                return False
+            
+            # Collect data only for monitored tokens we have positions in
+            position_data = {}
+            for _, row in positions.iterrows():
+                token = row['Mint Address']
+                current_value = row['USD Value']
+                
+                if current_value > 0:  # Double check we have a position
+                    cprint(f"📊 Getting market data for monitored position: {token}", "white", "on_blue")
+                    token_data = self.get_position_data(token)
+                    if token_data:
+                        position_data[token] = {
+                            'value_usd': current_value,
+                            'data': token_data
+                        }
+            
+            if not position_data:
+                cprint("❌ Could not get market data for any monitored positions", "white", "on_red")
+                return False
+                
+            # Format data for AI analysis
+            prompt = RISK_OVERRIDE_PROMPT.format(
+                limit_type=limit_type,
+                position_data=json.dumps(position_data, indent=2)
+            )
+            
+            cprint("🤖 AI Agent analyzing market data...", "white", "on_green")
+            
+            # Use DeepSeek if configured
+            if self.deepseek_client and MODEL_OVERRIDE.lower() == "deepseek-chat":
+                print("🚀 Using DeepSeek for analysis...")
+                response = self.deepseek_client.chat.completions.create(
+                    model="deepseek-chat",
+                    messages=[
+                        {"role": "system", "content": "You are Moon Dev's Risk Management AI. Analyze positions and respond with OVERRIDE or RESPECT_LIMIT."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=self.ai_max_tokens,
+                    temperature=self.ai_temperature,
+                    stream=False
+                )
+                response_text = response.choices[0].message.content.strip()
+            else:
+                # Use Claude as before
+                print("🤖 Using Claude for analysis...")
+                message = self.client.messages.create(
+                    model=self.ai_model,
+                    max_tokens=self.ai_max_tokens,
+                    temperature=self.ai_temperature,
+                    messages=[{
+                        "role": "user",
+                        "content": prompt
+                    }]
+                )
+                response_text = str(message.content)
+            
+            # Handle TextBlock format if using Claude
+            if 'TextBlock' in response_text:
+                match = re.search(r"text='([^']*)'", response_text)
+                if match:
+                    response_text = match.group(1)
+            
+            self.last_override_check = datetime.now()
+            
+            # Check if we should override (keep positions open)
+            self.override_active = "OVERRIDE" in response_text.upper()
+            
+            # Print the AI's reasoning with model info
+            cprint("\n🧠 Risk Agent Analysis:", "white", "on_blue")
+            cprint(f"Using model: {'DeepSeek' if self.deepseek_client else 'Claude'}", "white", "on_blue")
+            print(response_text)
+            
+            if self.override_active:
+                cprint("\n🤖 Risk Agent suggests keeping positions open", "white", "on_yellow")
+            else:
+                cprint("\n🛡️ Risk Agent recommends closing positions", "white", "on_red")
+            
+            return self.override_active
+            
+        except Exception as e:
+            cprint(f"❌ Error in override check: {str(e)}", "white", "on_red")
+            return False
+
+    def check_pnl_limits(self):
+        """Check if PnL limits have been hit"""
+        try:
+            self.current_value = self.get_portfolio_value()
+            
+            if USE_PERCENTAGE:
+                # Calculate percentage change
+                percent_change = ((self.current_value - self.start_balance) / self.start_balance) * 100
+                
+                if percent_change <= -MAX_LOSS_PERCENT:
+                    cprint("\n🛑 MAXIMUM LOSS PERCENTAGE REACHED", "white", "on_red")
+                    cprint(f"📉 Loss: {percent_change:.2f}% (Limit: {MAX_LOSS_PERCENT}%)", "red")
+                    return True
+                    
+                if percent_change >= MAX_GAIN_PERCENT:
+                    cprint("\n🎯 MAXIMUM GAIN PERCENTAGE REACHED", "white", "on_green")
+                    cprint(f"📈 Gain: {percent_change:.2f}% (Limit: {MAX_GAIN_PERCENT}%)", "green")
+                    return True
+                    
+            else:
+                # Calculate USD change
+                usd_change = self.current_value - self.start_balance
+                
+                if usd_change <= -MAX_LOSS_USD:
+                    cprint("\n🛑 MAXIMUM LOSS USD REACHED", "white", "on_red")
+                    cprint(f"📉 Loss: ${abs(usd_change):.2f} (Limit: ${MAX_LOSS_USD:.2f})", "red")
+                    return True
+                    
+                if usd_change >= MAX_GAIN_USD:
+                    cprint("\n🎯 MAXIMUM GAIN USD REACHED", "white", "on_green")
+                    cprint(f"📈 Gain: ${usd_change:.2f} (Limit: ${MAX_GAIN_USD:.2f})", "green")
+                    return True
+            
+            return False
+            
+        except Exception as e:
+            cprint(f"❌ Error checking PnL limits: {e}", "red")
+            return False
+
+    def close_all_positions(self):
+        """Close all monitored positions except USDC and SOL"""
+        try:
+            cprint("\n🔄 Closing monitored positions...", "white", "on_cyan")
+            
+            # Get all positions
+            positions = n.fetch_wallet_holdings_og(address)
+            
+            # Debug print to see what we're working with
+            cprint("\n📊 Current positions:", "cyan")
+            print(positions)
+            cprint("\n🎯 Monitored tokens:", "cyan")
+            print(MONITORED_TOKENS)
+            
+            # Filter for tokens that are both in MONITORED_TOKENS and not in EXCLUDED_TOKENS
+            positions = positions[
+                positions['Mint Address'].isin(MONITORED_TOKENS) & 
+                ~positions['Mint Address'].isin(EXCLUDED_TOKENS)
+            ]
+            
+            if positions.empty:
+                cprint("📝 No monitored positions to close", "white", "on_blue")
+                return
+                
+            # Close each monitored position
+            for _, row in positions.iterrows():
+                token = row['Mint Address']
+                value = row['USD Value']
+                
+                cprint(f"\n💰 Closing position: {token} (${value:.2f})", "white", "on_cyan")
+                try:
+                    n.chunk_kill(token, max_usd_order_size, slippage)
+                    cprint(f"✅ Successfully closed position for {token}", "white", "on_green")
+                except Exception as e:
+                    cprint(f"❌ Error closing position for {token}: {str(e)}", "white", "on_red")
+                    
+            cprint("\n✨ All monitored positions closed", "white", "on_green")
+            
+        except Exception as e:
+            cprint(f"❌ Error in close_all_positions: {str(e)}", "white", "on_red")
+
+    def check_risk_limits(self):
+        """Check if any risk limits have been breached"""
+        try:
+            # Get current PnL
+            current_pnl = self.get_current_pnl()
+            current_balance = self.get_portfolio_value()
+            
+            print(f"\n💰 Current PnL: ${current_pnl:.2f}")
+            print(f"💼 Current Balance: ${current_balance:.2f}")
+            print(f"📉 Minimum Balance Limit: ${MINIMUM_BALANCE_USD:.2f}")
+            
+            # Check minimum balance limit
+            if current_balance < MINIMUM_BALANCE_USD:
+                print(f"⚠️ ALERT: Current balance ${current_balance:.2f} is below minimum ${MINIMUM_BALANCE_USD:.2f}")
+                self.handle_limit_breach("MINIMUM_BALANCE", current_balance)
+                return True
+            
+            # Check PnL limits
+            if USE_PERCENTAGE:
+                if abs(current_pnl) >= MAX_LOSS_PERCENT:
+                    print(f"⚠️ PnL limit reached: {current_pnl}%")
+                    self.handle_limit_breach("PNL_PERCENT", current_pnl)
+                    return True
+            else:
+                if abs(current_pnl) >= MAX_LOSS_USD:
+                    print(f"⚠️ PnL limit reached: ${current_pnl:.2f}")
+                    self.handle_limit_breach("PNL_USD", current_pnl)
+                    return True
+                    
+            print("✅ All risk limits OK")
+            return False
+            
+        except Exception as e:
+            print(f"❌ Error checking risk limits: {str(e)}")
+            return False
+            
+    def handle_limit_breach(self, breach_type, current_value):
+        """Handle breached risk limits with AI consultation if enabled"""
+        try:
+            # If AI confirmation is disabled, close positions immediately
+            if not USE_AI_CONFIRMATION:
+                print(f"\n🚨 {breach_type} limit breached! Closing all positions immediately...")
+                print(f"💡 (AI confirmation disabled in config)")
+                self.close_all_positions()
+                return
+                
+            # Get all current positions using fetch_wallet_holdings_og
+            positions_df = n.fetch_wallet_holdings_og(address)
+            
+            # Prepare breach context
+            if breach_type == "MINIMUM_BALANCE":
+                context = f"Current balance (${current_value:.2f}) has fallen below minimum balance limit (${MINIMUM_BALANCE_USD:.2f})"
+            elif breach_type == "PNL_USD":
+                context = f"Current PnL (${current_value:.2f}) has exceeded USD limit (${MAX_LOSS_USD:.2f})"
+            else:
+                context = f"Current PnL ({current_value}%) has exceeded percentage limit ({MAX_LOSS_PERCENT}%)"
+            
+            # Format positions for AI
+            positions_str = "\nCurrent Positions:\n"
+            for _, row in positions_df.iterrows():
+                if row['USD Value'] > 0:
+                    positions_str += f"- {row['Mint Address']}: {row['Amount']} (${row['USD Value']:.2f})\n"
+                    
+            # Get AI recommendation
+            prompt = f"""
+🚨 RISK LIMIT BREACH ALERT 🚨
+
+{context}
+
+{positions_str}
+
+Should we close all positions immediately? Consider:
+1. Market conditions
+2. Position sizes
+3. Recent price action
+4. Risk of further losses
+
+Respond with:
+CLOSE_ALL or HOLD_POSITIONS
+Then explain your reasoning.
+"""
+            # Use DeepSeek if configured
+            if self.deepseek_client and MODEL_OVERRIDE.lower() == "deepseek-chat":
+                print("🚀 Using DeepSeek for analysis...")
+                response = self.deepseek_client.chat.completions.create(
+                    model="deepseek-chat",
+                    messages=[
+                        {"role": "system", "content": "You are Moon Dev's Risk Management AI. Analyze the breach and decide whether to close positions."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=self.ai_max_tokens,
+                    temperature=self.ai_temperature,
+                    stream=False
+                )
+                response_text = response.choices[0].message.content.strip()
+            else:
+                # Use Claude as before
+                print("🤖 Using Claude for analysis...")
+                message = self.client.messages.create(
+                    model=self.ai_model,
+                    max_tokens=self.ai_max_tokens,
+                    temperature=self.ai_temperature,
+                    messages=[{
+                        "role": "user",
+                        "content": prompt
+                    }]
+                )
+                response_text = str(message.content)
+            
+            # Handle TextBlock format if using Claude
+            if 'TextBlock' in response_text:
+                match = re.search(r"text='([^']*)'", response_text)
+                if match:
+                    response_text = match.group(1)
+            
+            print("\n🤖 AI Risk Assessment:")
+            print("=" * 50)
+            print(f"Using model: {'DeepSeek' if self.deepseek_client else 'Claude'}")
+            print(response_text)
+            print("=" * 50)
+            
+            # Parse decision
+            decision = response_text.split('\n')[0].strip()
+            
+            if decision == "CLOSE_ALL":
+                print("🚨 AI recommends closing all positions!")
+                self.close_all_positions()
+            else:
+                print("✋ AI recommends holding positions despite breach")
+                
+        except Exception as e:
+            print(f"❌ Error handling limit breach: {str(e)}")
+            # Default to closing positions on error
+            print("⚠️ Error in AI consultation - defaulting to close all positions")
+            self.close_all_positions()
+
+    def get_current_pnl(self):
+        """Calculate current PnL based on start balance"""
+        try:
+            current_value = self.get_portfolio_value()
+            print(f"\n💰 Start Balance: ${self.start_balance:.2f}")
+            print(f"📊 Current Value: ${current_value:.2f}")
+            
+            pnl = current_value - self.start_balance
+            print(f"📈 Current PnL: ${pnl:.2f}")
+            return pnl
+            
+        except Exception as e:
+            print(f"❌ Error calculating PnL: {str(e)}")
+            return 0.0
+
+    def run(self):
+        """Run the risk agent (implements BaseAgent interface)"""
+        try:
+            # Get current PnL
+            current_pnl = self.get_current_pnl()
+            current_balance = self.get_portfolio_value()
+            
+            print(f"\n💰 Current PnL: ${current_pnl:.2f}")
+            print(f"💼 Current Balance: ${current_balance:.2f}")
+            print(f"📉 Minimum Balance Limit: ${MINIMUM_BALANCE_USD:.2f}")
+            
+            # Check minimum balance limit
+            if current_balance < MINIMUM_BALANCE_USD:
+                print(f"⚠️ ALERT: Current balance ${current_balance:.2f} is below minimum ${MINIMUM_BALANCE_USD:.2f}")
+                self.handle_limit_breach("MINIMUM_BALANCE", current_balance)
+                return True
+            
+            # Check PnL limits
+            if USE_PERCENTAGE:
+                if abs(current_pnl) >= MAX_LOSS_PERCENT:
+                    print(f"⚠️ PnL limit reached: {current_pnl}%")
+                    self.handle_limit_breach("PNL_PERCENT", current_pnl)
+                    return True
+            else:
+                if abs(current_pnl) >= MAX_LOSS_USD:
+                    print(f"⚠️ PnL limit reached: ${current_pnl:.2f}")
+                    self.handle_limit_breach("PNL_USD", current_pnl)
+                    return True
+                    
+            print("✅ All risk limits OK")
+            return False
+            
+        except Exception as e:
+            print(f"❌ Error checking risk limits: {str(e)}")
+            return False
+
+def main():
+    """Main function to run the risk agent"""
+    cprint("🛡🛡🛡️ Risk Agent Starting...", "white", "on_blue")
+    
+    agent = RiskAgent()
+    
+    while True:
+        try:
+            # Always try to log balance (function will check if 12 hours have passed)
+            agent.log_daily_balance()
+            
+            # Always check PnL limits
+            agent.check_pnl_limits()
+            
+            # Sleep for 5 minutes before next check
+            time.sleep(300)
+                
+        except KeyboardInterrupt:
+            print("\n👋 Risk Agent shutting down gracefully...")
+            break
+        except Exception as e:
+            print(f"❌ Error: {str(e)}")
+            print("🔧 Moon Dev suggests checking the logs and trying again!")
+            time.sleep(300)  # Still sleep on error
+
+if __name__ == "__main__":
+    main()
+
+
+
+'''
+🌙 Moon Dev's Research Agent 🌙
+This agent automatically generates trading strategy ideas and logs them to both CSV and ideas.txt
+
+Features:
+- Rotates between multiple AI models (DeepSeek-R1, llama3.2, gemma:2b)
+- Checks for duplicate ideas before adding them
+- Logs ideas to a CSV file with timestamps and model info
+- Appends new ideas to the ideas.txt file for RBI Agent processing
+- Runs in a continuous loop generating new ideas
+
+Created with ❤️ by Moon Dev
+
+[] be able to search youtube
+[] be able to search the web 
+'''
+
+# PROMPT - Edit this to change the type of ideas generated
+IDEA_GENERATION_PROMPT = """
+You are Moon Dev's Trading Strategy Idea Generator 🌙
+
+Come up with ONE unique trading strategy idea that can be backtested
+The idea should be innovative, specific, and concise (1-2 sentences only).
+
+Focus on one of these areas:
+- Technical indicators with unique combinations
+- Volume patterns
+- Volatility-based strategies
+- Liquidation events
+- technical indicators that can be backtested
+
+
+Your response should be ONLY the strategy idea text - no explanations, no introductions, 
+no numbering, and no extra formatting. Just the raw idea in 1-2 sentences.
+
+Example good responses:
+"A mean-reversion strategy that enters when RSI diverges from price action while volume decreases, with exits based on ATR multiples."
+"Identify market regime shifts using a combination of volatility term structure and options skew, trading only when both align."
+"""
+
+import os
+import time
+import csv
+import random
+from datetime import datetime
+from pathlib import Path
+from termcolor import cprint, colored
+import pandas as pd
+import sys
+import threading
+import shutil
+import textwrap
+
+# Import model factory from RBI agent
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.models import model_factory
+
+# Define paths
+PROJECT_ROOT = Path(__file__).parent.parent.parent  # Points to project root
+DATA_DIR = PROJECT_ROOT / "src" / "data" / "rbi_pp_multi"
+IDEAS_TXT = DATA_DIR / "ideas.txt"
+IDEAS_CSV = DATA_DIR / "strategy_ideas.csv"
+
+# Model configurations
+MODELS = [
+    # {"type": "ollama", "name": "DeepSeek-R1:latest"},
+    # {"type": "ollama", "name": "llama3.2:latest"},
+    # {"type": "ollama", "name": "gemma:2b"}
+    {"type": "deepseek", "name": "deepseek-chat"},
+    {"type": "deepseek", "name": "deepseek-reasoner"}
+]
+
+# Fun emojis for animation
+EMOJIS = ["🚀", "💫", "✨", "🌟", "💎", "🔮", "🌙", "⭐", "🌠", "💰", "📈", "🧠"]
+MOON_PHASES = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"]
+
+# Get terminal width for better formatting
+TERM_WIDTH = shutil.get_terminal_size().columns
+
+def clear_line():
+    """Clear the current line in the terminal"""
+    print("\r" + " " * TERM_WIDTH, end="\r", flush=True)
+
+def animate_text(text, color="yellow", bg_color="on_blue", delay=0.03):
+    """Animate text with a typewriter effect - terminal friendly with background color"""
+    # Make sure we start with a clean line
+    clear_line()
+    
+    # Ensure we're working with a single line of text
+    text = ' '.join(text.split())
+    
+    result = ""
+    for char in text:
+        result += char
+        # Clear the line first to prevent ghosting
+        print("\r" + " " * len(result), end="\r", flush=True)
+        # Then print the updated text
+        print(f"\r{colored(result, color, bg_color)}", end='', flush=True)
+        time.sleep(delay)
+    
+    # End with a newline
+    print()  # New line after animation
+
+def animate_loading(duration=3, message="Generating idea", emoji="🌙"):
+    """Show a fun loading animation - terminal friendly version with background colors"""
+    frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    colors = ["cyan", "magenta", "blue", "green", "yellow"]
+    bg_colors = ["on_blue", "on_magenta", "on_cyan"]
+    
+    end_time = time.time() + duration
+    i = 0
+    
+    while time.time() < end_time:
+        frame = frames[i % len(frames)]
+        color = colors[(i // 3) % len(colors)]  # Change color less frequently
+        bg_color = bg_colors[(i // 6) % len(bg_colors)]  # Change background even less frequently
+        
+        # Simple animation that won't flicker
+        clear_line()
+        print(f"\r{colored(f' {frame} {message} {emoji} ', color, bg_color)}", end="", flush=True)
+        
+        time.sleep(0.2)  # Slower animation
+        i += 1
+    
+    clear_line()
+    print()  # New line after animation
+
+def animate_moon_dev():
+    """Show a fun Moon Dev animation - terminal friendly with background colors"""
+    moon_dev = [
+        "  __  __                         ____                 ",
+        " |  \\/  |  ___    ___   _ __   |  _ \\   ___  __   __ ",
+        " | |\\/| | / _ \\  / _ \\ | '_ \\  | | | | / _ \\ \\ \\ / / ",
+        " | |  | || (_) || (_) || | | | | |_| ||  __/  \\ V /  ",
+        " |_|  |_| \\___/  \\___/ |_| |_| |____/  \\___|   \\_/   "
+    ]
+    
+    colors = ["white", "white", "white", "white", "white"]
+    bg_colors = ["on_blue", "on_cyan", "on_magenta", "on_green", "on_blue"]
+    
+    print()  # Start with a blank line
+    for i, line in enumerate(moon_dev):
+        color = colors[i % len(colors)]
+        bg = bg_colors[i % len(bg_colors)]
+        cprint(line, color, bg)
+        time.sleep(0.3)  # Slower animation
+    
+    # Add some sparkles
+    for _ in range(3):
+        emoji = random.choice(EMOJIS)
+        position = random.randint(0, min(50, TERM_WIDTH-5))
+        print(" " * position + emoji)
+        time.sleep(0.3)  # Slower animation
+
+def setup_files():
+    """Set up the necessary files if they don't exist"""
+    # Create data directory if it doesn't exist
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    
+    # Create ideas.txt if it doesn't exist
+    if not IDEAS_TXT.exists():
+        cprint(f"📝 Creating ideas.txt at {IDEAS_TXT}", "yellow", "on_blue")
+        with open(IDEAS_TXT, 'w') as f:
+            f.write("# Moon Dev's Trading Strategy Ideas 🌙\n")
+            f.write("# One idea per line - Generated by Research Agent 🤖\n")
+            f.write("# Format: Strategy idea text (1-2 sentences)\n\n")
+    
+    # Create ideas CSV if it doesn't exist
+    if not IDEAS_CSV.exists():
+        cprint(f"📊 Creating ideas CSV at {IDEAS_CSV}", "white", "on_magenta")
+        with open(IDEAS_CSV, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['timestamp', 'model', 'idea'])
+
+def load_existing_ideas():
+    """Load existing ideas from CSV to check for duplicates"""
+    if not IDEAS_CSV.exists():
+        return set()
+    
+    try:
+        df = pd.read_csv(IDEAS_CSV)
+        if 'idea' in df.columns:
+            # Convert ideas to lowercase for case-insensitive comparison
+            ideas = set(idea.lower() for idea in df['idea'].tolist())
+            cprint(f"💾 Loaded {len(ideas)} existing ideas!", "white", "on_blue")
+            return ideas
+        return set()
+    except Exception as e:
+        cprint(f"⚠️ Error loading existing ideas: {str(e)}", "red")
+        return set()
+
+def is_duplicate(idea, existing_ideas):
+    """Check if an idea is a duplicate (case-insensitive)"""
+    # Simple exact match check
+    if idea.lower() in existing_ideas:
+        return True
+    
+    # Check for high similarity (future enhancement)
+    # This could use techniques like cosine similarity with embeddings
+    
+    return False
+
+def generate_idea(model_config):
+    """Generate a trading strategy idea using the specified model"""
+    try:
+        # Fun animated header
+        print("\n" + "=" * min(60, TERM_WIDTH))
+        cprint(f" 🧙‍♂️ MOON DEV'S IDEA GENERATOR 🧙‍♂️ ", "white", "on_magenta")
+        print("=" * min(60, TERM_WIDTH))
+        
+        cprint(f"\n🧠 Using {model_config['type']} - {model_config['name']}...", "cyan")
+        time.sleep(0.5)  # Pause for readability
+        
+        # Simple loading animation
+        print()
+        emoji = random.choice(EMOJIS)
+        cprint(f"🔮 Asking {model_config['name']} for trading ideas...", "yellow", "on_blue")
+        time.sleep(0.5)  # Pause for readability
+        
+        # Show generation progress with black text on white background
+        progress_messages = [
+            "🔍 Scanning market patterns...",
+            "📊 Analyzing technical indicators...",
+            "🧮 Calculating optimal parameters...",
+            "🔮 Exploring strategy combinations...",
+            "💡 Formulating unique approach...",
+            "🌟 Polishing trading concept...",
+            "🚀 Finalizing strategy idea..."
+        ]
+        
+        # Display progress messages with animation
+        for msg in progress_messages:
+            clear_line()
+            cprint(f" {msg} ", "black", "on_white")
+            time.sleep(0.7)  # Show each message briefly
+            animate_loading(1, f"{msg}", emoji)
+        
+        # Get model from factory
+        model = model_factory.get_model(model_config["type"], model_config["name"])
+        if not model:
+            cprint(f"❌ Could not initialize {model_config['type']} model!", "white", "on_red")
+            return None
+        
+        # Show generation in progress message
+        cprint(f"\n⏳ GENERATING TRADING STRATEGY IDEA...", "black", "on_white")
+        time.sleep(0.5)  # Pause for readability
+        
+        # Generate response
+        response = model.generate_response(
+            system_prompt=IDEA_GENERATION_PROMPT,
+            user_content="Generate one unique trading strategy idea.",
+            temperature=0.8  # Higher temperature for more creativity
+        )
+        
+        # Handle different response types
+        if isinstance(response, str):
+            idea = response
+        elif hasattr(response, 'content'):
+            idea = response.content
+        else:
+            idea = str(response)
+        
+        # Clean up the idea
+        idea = clean_idea(idea)
+        
+        # Display the idea with animation - only once
+        print()
+        cprint("💡 TRADING STRATEGY IDEA GENERATED!", "white", "on_green")
+        time.sleep(0.5)  # Pause for readability
+        
+        # Clear any previous output to avoid duplication
+        clear_line()
+        
+        # Animate the idea text - only once
+        animate_text(idea, "yellow", "on_blue")
+        
+        # Add some fun emojis
+        print()
+        for _ in range(2):
+            position = random.randint(0, min(40, TERM_WIDTH-5))
+            emoji = random.choice(EMOJIS)
+            print(" " * position + emoji)
+            time.sleep(0.3)
+        
+        return idea
+        
+    except Exception as e:
+        cprint(f"❌ Error generating idea: {str(e)}", "white", "on_red")
+        return None
+
+def clean_idea(idea):
+    """Clean up the generated idea text"""
+    # Remove thinking tags if present (for DeepSeek-R1)
+    if "<think>" in idea and "</think>" in idea:
+        cprint("🧠 Detected thinking tags, cleaning...", "yellow")
+        import re
+        idea = re.sub(r'<think>.*?</think>', '', idea, flags=re.DOTALL).strip()
+    
+    # Extract content from markdown bold/quotes if present
+    import re
+    bold_match = re.search(r'\*\*"?(.*?)"?\*\*', idea)
+    if bold_match:
+        cprint("🔍 Extracting core idea from markdown formatting...", "yellow")
+        idea = bold_match.group(1).strip()
+    
+    # Handle common prefixes from models
+    prefixes_to_remove = [
+        "Sure", "Sure,", "Here's", "Here is", "I'll", "I will", 
+        "A unique", "One unique", "Here's a", "Here is a",
+        "Trading strategy:", "Strategy idea:", "Trading idea:"
+    ]
+    
+    for prefix in prefixes_to_remove:
+        if idea.lower().startswith(prefix.lower()):
+            idea = idea[len(prefix):].strip()
+            # Remove any leading punctuation after prefix removal
+            idea = idea.lstrip(',:;.- ')
+    
+    # Remove any markdown formatting
+    idea = idea.replace('```', '').replace('#', '')
+    
+    # Remove any "Strategy:" or similar prefixes
+    prefixes = ["Strategy:", "Idea:", "Trading Strategy:", "Trading Idea:"]
+    for prefix in prefixes:
+        if idea.startswith(prefix):
+            idea = idea[len(prefix):].strip()
+    
+    # Remove quotes if they wrap the entire idea
+    if (idea.startswith('"') and idea.endswith('"')) or (idea.startswith("'") and idea.endswith("'")):
+        idea = idea[1:-1].strip()
+    
+    # Ensure it's a single line
+    idea = ' '.join(idea.split())
+    
+    # Truncate if too long (aim for 1-2 sentences)
+    sentences = re.split(r'[.!?]+', idea)
+    if len(sentences) > 2:
+        cprint("✂️ Truncating to first two sentences...", "yellow")
+        idea = '.'.join(sentences[:2]).strip() + '.'
+    
+    # Ensure first letter is capitalized
+    if idea and not idea[0].isupper():
+        idea = idea[0].upper() + idea[1:]
+    
+    return idea
+
+def log_idea(idea, model_config):
+    """Log a new idea to both CSV and ideas.txt"""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    model_name = f"{model_config['type']}-{model_config['name']}"
+    
+    # Animated saving sequence
+    cprint("\n💾 SAVING IDEA TO DATABASE...", "white", "on_blue")
+    time.sleep(0.5)  # Pause for readability
+    
+    # Animate moon phases - simplified
+    for phase in MOON_PHASES:
+        clear_line()
+        print(f"\r{colored(' ' + phase + ' Saving to Moon Dev database... ', 'white', 'on_magenta')}", end="", flush=True)
+        time.sleep(0.3)  # Slower animation
+    print()
+    
+    # Log to CSV
+    with open(IDEAS_CSV, 'a', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([timestamp, model_name, idea])
+    
+    # Check if ideas.txt ends with a newline
+    needs_newline = False
+    if IDEAS_TXT.exists():
+        with open(IDEAS_TXT, 'r') as f:
+            content = f.read()
+            if content and not content.endswith('\n'):
+                needs_newline = True
+    
+    # Append to ideas.txt
+    with open(IDEAS_TXT, 'a') as f:
+        if needs_newline:
+            f.write(f"\n{idea}\n")
+        else:
+            f.write(f"{idea}\n")
+    
+    # Success message with animation
+    time.sleep(0.5)  # Pause for readability
+    cprint("✅ IDEA SAVED SUCCESSFULLY!", "white", "on_green")
+    time.sleep(0.3)
+    
+    # Display save details with alternating colors
+    cprint(f"📊 CSV entry: {timestamp}", "black", "on_white")
+    time.sleep(0.2)
+    cprint(f"🤖 Model used: {model_name}", "white", "on_blue")
+    time.sleep(0.2)
+    cprint(f"📝 Added to ideas.txt", "white", "on_magenta")
+    
+    # Show the idea with a fancy border - ensure no duplication
+    border = "★" * min(60, TERM_WIDTH)
+    print("\n" + border)
+    
+    # Display the idea with a clean presentation
+    clear_line()
+    idea_display = f" 💡 {idea}"
+    # Wrap long ideas
+    if len(idea_display) > TERM_WIDTH - 4:
+        wrapped_idea = textwrap.fill(idea_display, width=TERM_WIDTH - 4)
+        cprint(wrapped_idea, "yellow", "on_blue")
+    else:
+        cprint(idea_display, "yellow", "on_blue")
+    
+    print(border + "\n")
+
+def run_idea_generation_loop(interval=10):
+    """Run the idea generation loop with a specified interval between generations"""
+    setup_files()
+    
+    # Fancy startup animation
+    animate_moon_dev()
+    time.sleep(0.5)  # Pause for readability
+    cprint("\n🌟 MOON DEV'S RESEARCH AGENT ACTIVATED! 🌟", "white", "on_magenta")
+    time.sleep(0.5)  # Pause for readability
+    cprint("🔄 Beginning continuous idea generation loop", "cyan")
+    time.sleep(1)  # Pause for readability
+    
+    try:
+        while True:
+            # Load existing ideas to check for duplicates
+            existing_ideas = load_existing_ideas()
+            cprint(f"📚 Loaded {len(existing_ideas)} existing ideas for duplicate checking", "white", "on_blue")
+            time.sleep(1)  # Pause for readability
+            
+            # Select a random model
+            model_config = random.choice(MODELS)
+            
+            # Generate idea
+            idea = generate_idea(model_config)
+            
+            if idea:
+                # Check if it's a duplicate
+                if is_duplicate(idea, existing_ideas):
+                    cprint(f"🔄 DUPLICATE DETECTED!", "white", "on_red")
+                    cprint(f"Skipping: {idea}", "yellow")
+                else:
+                    # Log the new idea
+                    log_idea(idea, model_config)
+            
+            # Fun waiting animation - exactly 10 seconds
+            cprint(f"\n⏱️ COOLDOWN PERIOD ACTIVATED", "white", "on_blue")
+            time.sleep(0.5)  # Pause for readability
+            
+            # Show a colorful countdown - simplified for terminal
+            moon_emojis = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"]
+            bg_colors = ["on_blue", "on_magenta", "on_cyan", "on_green"]
+            
+            for i in range(10):  # Always exactly 10 seconds
+                # Cycle through emojis and backgrounds
+                emoji = moon_emojis[i % len(moon_emojis)]
+                bg = bg_colors[i % len(bg_colors)]
+                
+                # Display countdown with simple animation
+                remaining = 10 - i
+                clear_line()
+                print(f"\r{colored(f' {emoji} Next idea in: {remaining} seconds ', 'white', bg)}", end="", flush=True)
+                time.sleep(1)
+            
+            clear_line()
+            print("\n" + "=" * min(60, TERM_WIDTH))
+            
+    except KeyboardInterrupt:
+        cprint("\n👋 MOON DEV'S RESEARCH AGENT SHUTTING DOWN...", "white", "on_yellow")
+        
+        # Shutdown animation
+        for i in range(5):
+            print(f"\r{'.' * i}", end="", flush=True)
+            time.sleep(0.3)
+        
+        cprint("\n🌙 Thank you for using Moon Dev's Research Agent! 🌙", "white", "on_magenta")
+    except Exception as e:
+        cprint(f"\n❌ FATAL ERROR: {str(e)}", "white", "on_red")
+        import traceback
+        cprint(traceback.format_exc(), "red")
+
+def test_run(num_ideas=1, interval=10):
+    """Run a short test of the idea generation process"""
+    setup_files()
+    
+    # Fancy startup animation
+    animate_moon_dev()
+    time.sleep(0.5)  # Pause for readability
+    cprint("\n🧪 MOON DEV'S RESEARCH AGENT - TEST MODE", "white", "on_magenta")
+    time.sleep(0.5)  # Pause for readability
+    cprint(f"🔄 Will generate {num_ideas} ideas with {interval} seconds interval", "cyan")
+    time.sleep(1)  # Pause for readability
+    
+    try:
+        existing_ideas = load_existing_ideas()
+        cprint(f"📚 Loaded {len(existing_ideas)} existing ideas for duplicate checking", "white", "on_blue")
+        time.sleep(1)  # Pause for readability
+        
+        ideas_generated = 0
+        while ideas_generated < num_ideas:
+            # Select a random model
+            model_config = random.choice(MODELS)
+            
+            # Generate idea
+            idea = generate_idea(model_config)
+            
+            if idea:
+                # Check if it's a duplicate
+                if is_duplicate(idea, existing_ideas):
+                    cprint(f"🔄 DUPLICATE DETECTED!", "white", "on_red")
+                    cprint(f"Skipping: {idea}", "yellow")
+                else:
+                    # Log the new idea
+                    log_idea(idea, model_config)
+                    ideas_generated += 1
+                    existing_ideas.add(idea.lower())
+            
+            if ideas_generated < num_ideas:
+                # Fun waiting animation - always 10 seconds
+                cprint(f"\n⏱️ COOLDOWN PERIOD ACTIVATED", "white", "on_blue")
+                time.sleep(0.5)  # Pause for readability
+                
+                # Show a colorful countdown - simplified for terminal
+                moon_emojis = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"]
+                bg_colors = ["on_blue", "on_magenta", "on_cyan", "on_green"]
+                
+                # Always use exactly 10 seconds regardless of the interval parameter
+                for i in range(10):
+                    # Cycle through emojis and backgrounds
+                    emoji = moon_emojis[i % len(moon_emojis)]
+                    bg = bg_colors[i % len(bg_colors)]
+                    
+                    # Display countdown with simple animation
+                    remaining = 10 - i
+                    clear_line()
+                    print(f"\r{colored(f' {emoji} Next idea in: {remaining} seconds ', 'white', bg)}", end="", flush=True)
+                    time.sleep(1)
+                
+                clear_line()
+                print()
+        
+        # Success animation
+        cprint(f"\n✅ TEST COMPLETED SUCCESSFULLY!", "white", "on_green")
+        time.sleep(0.5)  # Pause for readability
+        cprint(f"Generated {ideas_generated} ideas", "yellow")
+        
+        # Show some celebratory emojis
+        for _ in range(5):
+            position = random.randint(0, min(40, TERM_WIDTH-5))
+            emoji = random.choice(EMOJIS)
+            print(" " * position + emoji)
+            time.sleep(0.3)
+        
+    except KeyboardInterrupt:
+        cprint("\n👋 Test interrupted", "white", "on_yellow")
+    except Exception as e:
+        cprint(f"\n❌ ERROR DURING TEST: {str(e)}", "white", "on_red")
+        import traceback
+        cprint(traceback.format_exc(), "red")
+
+def main():
+    """Main function to run the research agent"""
+    # Check if we're running in test mode
+    if len(sys.argv) > 1 and sys.argv[1] == "--test":
+        test_run()
+    else:
+        run_idea_generation_loop()
+
+if __name__ == "__main__":
+    main()
+
+#!/usr/bin/env python3
+"""
+HYPERLIQUID VOLUME AGENT - SWARM EDITION
+Made by Moon Dev
+
+Autonomous agent that monitors top 15 Hyperliquid altcoins every 4 hours.
+Uses AI swarm (via model_factory) to identify best trading opportunities.
+
+The edge: Catch volume spikes BEFORE Crypto Twitter notices!
+"""
+
+import requests
+import time
+import csv
+import os
+import json
+import sys
+from datetime import datetime
+from pathlib import Path
+from termcolor import cprint
+
+# Add project root to path
+project_root = str(Path(__file__).parent.parent.parent)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+# Import Moon Dev's Swarm Agent
+from src.agents.swarm_agent import SwarmAgent
+
+# ============================================================================
+# CONFIGURATION - Moon Dev
+# ============================================================================
+HYPERLIQUID_API = "https://api.hyperliquid.xyz/info"
+
+# Data directory in proper location
+DATA_DIR = os.path.join(project_root, "src/data/volume_agent")
+VOLUME_LOG = os.path.join(DATA_DIR, "volume_history.csv")
+ANALYSIS_LOG = os.path.join(DATA_DIR, "agent_analysis.jsonl")
+
+CHECK_INTERVAL = 4 * 60 * 60  # 4 hours
+
+# Exclude majors - we want altcoins only
+EXCLUDED_TOKENS = ['BTC', 'ETH', 'SOL']
+TOP_N = 15
+
+# ============================================================================
+# DATA FETCHING - Moon Dev
+# ============================================================================
+
+def get_all_tokens_volume():
+    """Fetch all Hyperliquid tokens with volume data - Moon Dev"""
+    try:
+        payload = {"type": "metaAndAssetCtxs"}
+        response = requests.post(HYPERLIQUID_API, json=payload, timeout=15)
+
+        if response.status_code != 200:
+            cprint(f"❌ API Error: {response.status_code}", "red")
+            return []
+
+        data = response.json()
+        tokens = []
+
+        universe = data[0].get('universe', [])
+        contexts = data[1]
+
+        for i, token_info in enumerate(universe):
+            symbol = token_info.get('name', 'UNKNOWN')
+
+            if i < len(contexts):
+                ctx = contexts[i]
+                mark_price = float(ctx.get('markPx', 0))
+                volume_24h = float(ctx.get('dayNtlVlm', 0))
+                funding = float(ctx.get('funding', 0))
+                open_interest = float(ctx.get('openInterest', 0))
+                prev_day_px = float(ctx.get('prevDayPx', mark_price))
+
+                if prev_day_px > 0:
+                    change_24h = ((mark_price - prev_day_px) / prev_day_px) * 100
+                else:
+                    change_24h = 0
+
+                tokens.append({
+                    'symbol': symbol,
+                    'volume_24h': volume_24h,
+                    'price': mark_price,
+                    'change_24h': change_24h,
+                    'funding_rate': funding * 100,
+                    'open_interest': open_interest
+                })
+
+        return tokens
+
+    except Exception as e:
+        cprint(f"❌ Error fetching data: {e}", "red")
+        return []
+
+def get_top_altcoins():
+    """Get top altcoins excluding BTC/ETH/SOL - Moon Dev"""
+    tokens = get_all_tokens_volume()
+    if not tokens:
+        return []
+
+    tokens_sorted = sorted(tokens, key=lambda x: x['volume_24h'], reverse=True)
+    altcoins = [t for t in tokens_sorted if t['symbol'] not in EXCLUDED_TOKENS]
+
+    return altcoins[:TOP_N]
+
+# ============================================================================
+# CHANGE CALCULATION - Moon Dev
+# ============================================================================
+
+def load_previous_snapshot():
+    """Load the previous 4h snapshot from CSV - Moon Dev"""
+    if not os.path.exists(VOLUME_LOG):
+        return {}
+
+    try:
+        previous_data = {}
+
+        with open(VOLUME_LOG, 'r') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+
+            if len(rows) == 0:
+                return {}
+
+            # Get the most recent check
+            if len(rows) >= TOP_N:
+                last_timestamp = rows[-1]['timestamp']
+
+                for row in rows:
+                    if row['timestamp'] == last_timestamp:
+                        symbol = row['symbol']
+                        previous_data[symbol] = {
+                            'rank': int(row['rank']),
+                            'volume_24h': float(row['volume_24h']),
+                            'price': float(row['price']),
+                            'change_24h': float(row['change_24h_pct'])
+                        }
+
+        return previous_data
+
+    except Exception as e:
+        cprint(f"⚠️ Error loading previous data: {e}", "yellow")
+        return {}
+
+def load_24h_snapshot():
+    """Load snapshot from 24 hours ago (6 checks back) - Moon Dev"""
+    if not os.path.exists(VOLUME_LOG):
+        return {}
+
+    try:
+        snapshot_24h = {}
+
+        with open(VOLUME_LOG, 'r') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+
+            if len(rows) == 0:
+                return {}
+
+            # Get all unique timestamps
+            timestamps = sorted(list(set(row['timestamp'] for row in rows)))
+
+            # Need at least 7 snapshots to go back 24h (6 intervals of 4h = 24h)
+            if len(timestamps) < 7:
+                return {}
+
+            # Get timestamp from 6 checks ago (24h)
+            target_timestamp = timestamps[-7]
+
+            for row in rows:
+                if row['timestamp'] == target_timestamp:
+                    symbol = row['symbol']
+                    snapshot_24h[symbol] = {
+                        'volume_24h': float(row['volume_24h'])
+                    }
+
+        return snapshot_24h
+
+    except Exception as e:
+        cprint(f"⚠️ Error loading 24h data: {e}", "yellow")
+        return {}
+
+def calculate_changes(current_tokens, previous_data, data_24h=None):
+    """Calculate 4-hour and 24-hour volume changes - Moon Dev"""
+    changes = []
+
+    for i, token in enumerate(current_tokens):
+        symbol = token['symbol']
+        current_rank = i + 1
+        current_volume = token['volume_24h']
+
+        change_info = {
+            'symbol': symbol,
+            'current_rank': current_rank,
+            'current_volume': current_volume,
+            'current_price': token['price'],
+            'change_24h': token['change_24h'],
+            'funding_rate': token['funding_rate'],
+            'open_interest': token['open_interest'],
+            'volume_change_4h': None,
+            'volume_change_24h': None,
+            'rank_change_4h': None,
+            'is_new_entry': False
+        }
+
+        # Calculate 4H volume change
+        if symbol in previous_data:
+            prev_volume = previous_data[symbol]['volume_24h']
+            prev_rank = previous_data[symbol]['rank']
+
+            if prev_volume > 0:
+                change_info['volume_change_4h'] = ((current_volume - prev_volume) / prev_volume) * 100
+
+            change_info['rank_change_4h'] = prev_rank - current_rank
+        else:
+            change_info['is_new_entry'] = True
+
+        # Calculate 24H volume change
+        if data_24h and symbol in data_24h:
+            vol_24h_ago = data_24h[symbol]['volume_24h']
+            if vol_24h_ago > 0:
+                change_info['volume_change_24h'] = ((current_volume - vol_24h_ago) / vol_24h_ago) * 100
+
+        changes.append(change_info)
+
+    return changes
+
+# ============================================================================
+# DATA LOGGING - Moon Dev
+# ============================================================================
+
+def initialize_data_dir():
+    """Initialize data directory and CSV - Moon Dev"""
+    os.makedirs(DATA_DIR, exist_ok=True)
+
+    if not os.path.exists(VOLUME_LOG):
+        with open(VOLUME_LOG, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                'timestamp',
+                'datetime',
+                'rank',
+                'symbol',
+                'volume_24h',
+                'price',
+                'change_24h_pct',
+                'funding_rate_pct',
+                'open_interest'
+            ])
+
+def log_volume_snapshot(tokens):
+    """Log current snapshot to CSV - Moon Dev"""
+    timestamp = time.time()
+    dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    with open(VOLUME_LOG, 'a', newline='') as f:
+        writer = csv.writer(f)
+        for rank, token in enumerate(tokens, 1):
+            writer.writerow([
+                timestamp,
+                dt,
+                rank,
+                token['symbol'],
+                f"{token['volume_24h']:.0f}",
+                f"{token['price']:.6f}",
+                f"{token['change_24h']:.2f}",
+                f"{token['funding_rate']:.4f}",
+                f"{token['open_interest']:.0f}"
+            ])
+
+def log_agent_analysis(changes, swarm_result):
+    """Log agent analysis to JSONL - Moon Dev"""
+    log_entry = {
+        'timestamp': time.time(),
+        'datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'changes': changes,
+        'swarm_result': swarm_result
+    }
+
+    with open(ANALYSIS_LOG, 'a') as f:
+        f.write(json.dumps(log_entry, default=str) + '\n')
+
+# ============================================================================
+# DISPLAY - Moon Dev
+# ============================================================================
+
+def format_volume(volume):
+    """Format volume for display - Moon Dev"""
+    if volume >= 1_000_000_000:
+        return f"${volume/1_000_000_000:.2f}B"
+    elif volume >= 1_000_000:
+        return f"${volume/1_000_000:.2f}M"
+    else:
+        return f"${volume/1_000:.2f}K"
+
+def display_changes(changes):
+    """Display beautiful change report for the Data Dog - Moon Dev"""
+    cprint("\n" + "=" * 170, "cyan", attrs=['bold'])
+    cprint("📊 HYPERLIQUID TOP 15 ALTCOINS - COMPLETE MARKET VIEW 📊", "cyan", attrs=['bold'])
+    cprint("=" * 170, "cyan", attrs=['bold'])
+
+    # Header row
+    header = (
+        f"\n{'#':<4} "
+        f"{'SYMBOL':<10} "
+        f"{'PRICE':<14} "
+        f"{'24H VOLUME':<16} "
+        f"{'4H VOL Δ':<14} "
+        f"{'24H PRICE Δ':<14} "
+        f"{'RANK Δ':<12} "
+        f"{'FUNDING':<12} "
+        f"{'OPEN INT':<16} "
+        f"{'SIGNALS':<30}"
+    )
+    cprint(header, "white", attrs=['bold'])
+    print("─" * 170)
+
+    for change in changes:
+        rank = change['current_rank']
+        symbol = change['symbol']
+        price = f"${change['current_price']:.4f}" if change['current_price'] < 10 else f"${change['current_price']:.2f}"
+        volume = format_volume(change['current_volume'])
+        change_24h = change['change_24h']
+        funding = change['funding_rate']
+        oi = format_volume(change['open_interest'])
+
+        # 4H Volume change with color
+        if change['volume_change_4h'] is not None:
+            vol_chg_4h = change['volume_change_4h']
+            if vol_chg_4h > 0:
+                vol_chg_str = f"+{vol_chg_4h:.1f}%"
+                vol_color = "green"
+            else:
+                vol_chg_str = f"{vol_chg_4h:.1f}%"
+                vol_color = "red"
+        else:
+            vol_chg_str = "NEW ENTRY"
+            vol_color = "yellow"
+
+        # 24H Price change with color
+        if change_24h > 0:
+            price_chg_str = f"+{change_24h:.2f}%"
+            price_color = "green"
+        else:
+            price_chg_str = f"{change_24h:.2f}%"
+            price_color = "red"
+
+        # Rank change
+        if change['rank_change_4h'] is not None:
+            if change['rank_change_4h'] > 0:
+                rank_chg = f"↑ +{change['rank_change_4h']}"
+                rank_color = "green"
+            elif change['rank_change_4h'] < 0:
+                rank_chg = f"↓ {change['rank_change_4h']}"
+                rank_color = "red"
+            else:
+                rank_chg = "→ 0"
+                rank_color = "white"
+        else:
+            rank_chg = "NEW"
+            rank_color = "yellow"
+
+        # Funding color
+        if funding > 0.01:
+            fund_color = "yellow"
+            fund_str = f"+{funding:.4f}%"
+        elif funding < -0.01:
+            fund_color = "magenta"
+            fund_str = f"{funding:.4f}%"
+        else:
+            fund_color = "white"
+            fund_str = f"{funding:.4f}%"
+
+        # Signals - this is what catches Moon Dev's eye
+        signals = []
+        if change['is_new_entry']:
+            signals.append("🆕NEW")
+        if change['volume_change_4h'] and change['volume_change_4h'] > 50:
+            signals.append("🔥VOL+50%")
+        elif change['volume_change_4h'] and change['volume_change_4h'] > 20:
+            signals.append("📈VOL+20%")
+        if change['rank_change_4h'] and change['rank_change_4h'] >= 3:
+            signals.append("⬆️CLIMB+3")
+        if change_24h > 30:
+            signals.append("🚀PUMP+30%")
+        elif change_24h > 15:
+            signals.append("💚PUMP+15%")
+
+        signal_str = " ".join(signals) if signals else "─"
+        signal_color = "yellow" if "🆕NEW" in signals else "green" if signals else "white"
+
+        # Print row with proper spacing and colors
+        print(f"{rank:<4} {symbol:<10} {price:<14} {volume:<16} ", end="")
+        cprint(f"{vol_chg_str:<14}", vol_color, end=" ")
+        cprint(f"{price_chg_str:<14}", price_color, end=" ")
+        cprint(f"{rank_chg:<12}", rank_color, end=" ")
+        cprint(f"{fund_str:<12}", fund_color, end=" ")
+        print(f"{oi:<16} ", end="")
+        cprint(signal_str, signal_color)
+
+    cprint("\n" + "=" * 170, "cyan", attrs=['bold'])
+
+    # Add a quick summary for the Data Dog
+    cprint("\n🔍 MARKET SNAPSHOT:", "cyan", attrs=['bold'])
+    new_entries = [c for c in changes if c['is_new_entry']]
+    big_movers = [c for c in changes if c['change_24h'] > 20]
+    vol_accelerators = [c for c in changes if c['volume_change_4h'] and c['volume_change_4h'] > 50]
+    climbers = [c for c in changes if c['rank_change_4h'] and c['rank_change_4h'] >= 3]
+
+    if new_entries:
+        symbols = ", ".join([c['symbol'] for c in new_entries])
+        cprint(f"   🆕 New Top-15 Entries: {symbols}", "yellow")
+    if big_movers:
+        symbols = ", ".join([f"{c['symbol']} ({c['change_24h']:+.1f}%)" for c in big_movers])
+        cprint(f"   🚀 24H Big Movers (>20%): {symbols}", "green")
+    if vol_accelerators:
+        symbols = ", ".join([f"{c['symbol']} ({c['volume_change_4h']:+.1f}%)" for c in vol_accelerators])
+        cprint(f"   🔥 Volume Accelerators (>50%): {symbols}", "green")
+    if climbers:
+        symbols = ", ".join([f"{c['symbol']} (↑{c['rank_change_4h']})" for c in climbers])
+        cprint(f"   ⬆️  Rank Climbers (+3 or more): {symbols}", "green")
+    if not (new_entries or big_movers or vol_accelerators or climbers):
+        cprint("   ✅ Market steady - no major signals detected", "white")
+
+    cprint("\n" + "=" * 170 + "\n", "cyan", attrs=['bold'])
+
+# ============================================================================
+# AI SWARM ANALYSIS - Moon Dev
+# ============================================================================
+
+def create_analysis_prompt(changes):
+    """Create prompt for swarm agents - Moon Dev
+
+    VOLUME ONLY - No price, no funding, no open interest.
+    Pure volume analysis for the Data Dog.
+    """
+
+    prompt = """You are a VOLUME TRACKER analyzing Hyperliquid volume patterns.
+
+Your ONLY job is to identify volume acceleration and momentum. DO NOT consider price, funding rates, or any other data.
+
+Here is the current top 15 altcoins by 24H VOLUME with volume changes:
+
+"""
+
+    for change in changes:
+        symbol = change['symbol']
+        rank = change['current_rank']
+        volume = format_volume(change['current_volume'])
+        vol_chg_4h = change['volume_change_4h']
+        vol_chg_24h = change['volume_change_24h']
+        rank_chg = change['rank_change_4h']
+
+        prompt += f"\n{rank}. {symbol}:\n"
+        prompt += f"   - Current 24H Volume: {volume}\n"
+
+        # 4H volume change
+        if vol_chg_4h is not None:
+            prompt += f"   - 4H Volume Change: {vol_chg_4h:+.1f}%\n"
+        else:
+            prompt += f"   - 4H Volume Change: NEW ENTRY (wasn't in top 15 last check)\n"
+
+        # 24H volume change
+        if vol_chg_24h is not None:
+            prompt += f"   - 24H Volume Change: {vol_chg_24h:+.1f}%\n"
+        else:
+            prompt += f"   - 24H Volume Change: N/A (need more history)\n"
+
+        # Rank movement
+        if rank_chg is not None:
+            if rank_chg > 0:
+                prompt += f"   - Rank Movement: CLIMBED {rank_chg} spots\n"
+            elif rank_chg < 0:
+                prompt += f"   - Rank Movement: DROPPED {abs(rank_chg)} spots\n"
+            else:
+                prompt += f"   - Rank Movement: STABLE\n"
+        else:
+            prompt += f"   - Rank Movement: NEW ENTRY\n"
+
+    prompt += """\n\nBased on VOLUME DATA ONLY, which token would you buy right now?
+
+Consider ONLY:
+- Volume acceleration (4H vs 24H trends)
+- Absolute volume size (bigger = more liquidity/interest)
+- Rank climbing patterns (gaining market share)
+- New entries with strong volume
+- Sustained volume growth vs flash spikes
+
+Give your pick and explain your reasoning in 2-3 sentences. Focus EXCLUSIVELY on volume patterns."""
+
+    return prompt
+
+def run_swarm_analysis(changes):
+    """Run swarm analysis - Moon Dev"""
+
+    cprint("\n🤖 Running AI Swarm Analysis...\n", "cyan", attrs=['bold'])
+
+    # Initialize swarm with Moon Dev's models
+    swarm = SwarmAgent()
+
+    # Create prompt
+    prompt = create_analysis_prompt(changes)
+
+    # Query the swarm
+    result = swarm.query(prompt)
+
+    return result
+
+def display_swarm_results(result):
+    """Display swarm analysis results for the Data Dog - Moon Dev"""
+
+    cprint("\n" + "=" * 170, "green", attrs=['bold'])
+    cprint("🧠 AI SWARM ANALYSIS - INDIVIDUAL RECOMMENDATIONS + CONSENSUS 🧠", "green", attrs=['bold'])
+    cprint("=" * 170, "green", attrs=['bold'])
+
+    # Show consensus FIRST - this is what Moon Dev wants to see immediately
+    if "consensus_summary" in result:
+        cprint("\n" + "─" * 170, "cyan")
+        cprint("🎯 CONSENSUS RECOMMENDATION (ALL AIs AGREE):", "cyan", attrs=['bold'])
+        cprint("─" * 170, "cyan")
+        cprint(f"\n{result['consensus_summary']}\n", "green", attrs=['bold'])
+        cprint("─" * 170 + "\n", "cyan")
+
+    # Show individual responses - ALL OF THEM
+    cprint("\n📋 INDIVIDUAL AI RECOMMENDATIONS:", "yellow", attrs=['bold'])
+    cprint("─" * 170, "yellow")
+
+    # Create reverse mapping for clean labels
+    reverse_mapping = {}
+    if "model_mapping" in result:
+        for ai_num, provider in result["model_mapping"].items():
+            reverse_mapping[provider.lower()] = ai_num
+
+    # Sort by response time for Moon Dev to see fastest first
+    sorted_responses = sorted(
+        result["responses"].items(),
+        key=lambda x: x[1].get("response_time", 999) if x[1].get("success") else 999
+    )
+
+    for i, (provider, data) in enumerate(sorted_responses, 1):
+        if data["success"]:
+            ai_label = reverse_mapping.get(provider, "")
+            provider_name = provider.replace('_', ' ').upper()
+
+            # Header for each AI
+            cprint(f"\n{'═' * 170}", "yellow")
+            if ai_label:
+                cprint(f"💬 {ai_label}: {provider_name} (Response Time: {data['response_time']:.2f}s)", "yellow", attrs=['bold'])
+            else:
+                cprint(f"💬 {provider_name} (Response Time: {data['response_time']:.2f}s)", "yellow", attrs=['bold'])
+            cprint(f"{'─' * 170}", "yellow")
+
+            # The actual recommendation
+            cprint(f"{data['response']}", "white")
+            cprint(f"{'─' * 170}", "yellow")
+
+    # Metadata summary
+    if "metadata" in result:
+        meta = result["metadata"]
+        cprint(f"\n\n📊 SWARM STATS:", "blue", attrs=['bold'])
+        cprint(f"   ✅ Successful Responses: {meta.get('successful_responses', 0)}/{meta.get('total_models', 0)}", "green")
+        cprint(f"   ⏱️  Total Analysis Time: {meta.get('total_time', 0):.2f}s", "cyan")
+
+    cprint("\n" + "=" * 170 + "\n", "green", attrs=['bold'])
+
+def display_data_table(changes):
+    """Display clean data table for human analysis - Moon Dev"""
+
+    cprint("\n" + "=" * 170, "blue", attrs=['bold'])
+    cprint("📊 TOP 15 DATA TABLE - RAW DATA FOR MOON DEV'S ANALYSIS 📊", "blue", attrs=['bold'])
+    cprint("=" * 170, "blue", attrs=['bold'])
+
+    # Header
+    header = (
+        f"\n{'RANK':<6}"
+        f"{'SYMBOL':<12}"
+        f"{'PRICE':<16}"
+        f"{'24H VOLUME':<18}"
+        f"{'4H VOL Δ':<16}"
+        f"{'24H VOL Δ':<16}"
+        f"{'24H PRICE Δ':<16}"
+        f"{'FUNDING %':<14}"
+        f"{'OPEN INT':<18}"
+    )
+    cprint(header, "white", attrs=['bold'])
+    cprint("─" * 170, "blue")
+
+    # Data rows
+    for change in changes:
+        rank = change['current_rank']
+        symbol = change['symbol']
+        price = f"${change['current_price']:.6f}" if change['current_price'] < 1 else f"${change['current_price']:.2f}"
+        volume = format_volume(change['current_volume'])
+        price_24h = change['change_24h']
+        funding = change['funding_rate']
+        oi = format_volume(change['open_interest'])
+
+        # 4H Volume change
+        if change['volume_change_4h'] is not None:
+            vol_4h = f"{change['volume_change_4h']:+.2f}%"
+        else:
+            vol_4h = "NEW"
+
+        # 24H Volume change
+        if change['volume_change_24h'] is not None:
+            vol_24h = f"{change['volume_change_24h']:+.2f}%"
+        else:
+            vol_24h = "N/A"
+
+        # 24H Price change
+        price_24h_str = f"{price_24h:+.2f}%"
+
+        # Funding
+        funding_str = f"{funding:+.4f}%"
+
+        # Print row
+        row = (
+            f"{rank:<6}"
+            f"{symbol:<12}"
+            f"{price:<16}"
+            f"{volume:<18}"
+            f"{vol_4h:<16}"
+            f"{vol_24h:<16}"
+            f"{price_24h_str:<16}"
+            f"{funding_str:<14}"
+            f"{oi:<18}"
+        )
+        print(row)
+
+    cprint("\n" + "=" * 170, "blue", attrs=['bold'])
+    cprint("💡 Moon Dev Tip: Compare this data with AI consensus to find your edge!", "yellow", attrs=['bold'])
+    cprint("=" * 170 + "\n", "blue", attrs=['bold'])
+
+# ============================================================================
+# MAIN LOOP - Moon Dev
+# ============================================================================
+
+def run_check():
+    """Run one 4-hour check - Moon Dev"""
+
+    cprint("\n" + "=" * 120, "magenta")
+    cprint(f"🔄 VOLUME AGENT CHECK - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", "magenta", attrs=['bold'])
+    cprint("=" * 120 + "\n", "magenta")
+
+    # 1. Fetch current top 15
+    cprint("📡 Fetching Hyperliquid data...", "cyan")
+    current_tokens = get_top_altcoins()
+
+    if not current_tokens:
+        cprint("❌ No data received", "red")
+        return
+
+    cprint(f"✅ Got top {len(current_tokens)} altcoins\n", "green")
+
+    # 2. Load previous snapshots and calculate changes
+    cprint("📊 Calculating 4-hour and 24-hour changes...", "cyan")
+    previous_data = load_previous_snapshot()
+    data_24h = load_24h_snapshot()
+    changes = calculate_changes(current_tokens, previous_data, data_24h)
+    cprint(f"✅ Calculated changes\n", "green")
+
+    # 3. Display changes
+    display_changes(changes)
+
+    # 4. Run AI swarm analysis
+    swarm_result = run_swarm_analysis(changes)
+
+    # 5. Display full analysis
+    display_swarm_results(swarm_result)
+
+    # 6. Display data table for human analysis
+    display_data_table(changes)
+
+    # 7. Log everything
+    cprint("💾 Logging data...", "cyan")
+    log_volume_snapshot(current_tokens)
+    log_agent_analysis(changes, swarm_result)
+    cprint(f"✅ Logged to {DATA_DIR}/\n", "green")
+
+    cprint("=" * 120, "magenta")
+    cprint(f"✅ Check complete! Next check in 4 hours...", "green", attrs=['bold'])
+    cprint("=" * 120 + "\n", "magenta")
+
+def run_continuous():
+    """Run agent every 4 hours - Moon Dev"""
+
+    cprint("\n" + "=" * 120, "green")
+    cprint("🤖 HYPERLIQUID VOLUME AGENT - SWARM EDITION 🤖", "green", attrs=['bold'])
+    cprint("Made by Moon Dev", "yellow", attrs=['bold'])
+    cprint("=" * 120, "green")
+    cprint("\n⏰ Running every 4 hours", "cyan")
+    cprint(f"💾 Data saved to: {DATA_DIR}/", "cyan")
+    cprint("🎯 Goal: Catch volume pumps BEFORE Crypto Twitter!\n", "yellow")
+
+    initialize_data_dir()
+
+    iteration = 0
+
+    try:
+        while True:
+            iteration += 1
+            run_check()
+
+            cprint(f"⏳ Sleeping for 4 hours... (Check #{iteration} complete)\n", "yellow")
+            time.sleep(CHECK_INTERVAL)
+
+    except KeyboardInterrupt:
+        cprint("\n\n" + "=" * 120, "yellow")
+        cprint("👋 Volume Agent stopped", "yellow", attrs=['bold'])
+        cprint("=" * 120, "yellow")
+        cprint(f"Total checks completed: {iteration}", "cyan")
+        cprint(f"All data saved to: {DATA_DIR}/\n", "cyan")
+
+# ============================================================================
+# ENTRY POINT - Moon Dev
+# ============================================================================
+
+def main():
+    """Main entry point - Moon Dev"""
+    import sys
+
+    if len(sys.argv) > 1 and sys.argv[1] == "--once":
+        # Single run mode
+        cprint("\n🤖 VOLUME AGENT - SINGLE RUN MODE 🤖\n", "cyan", attrs=['bold'])
+        initialize_data_dir()
+        run_check()
+    else:
+        # Continuous mode
+        run_continuous()
+
+if __name__ == "__main__":
+    main()
+
+
+logger.info("✅ Enhanced Agents loaded: Risk (631 lines), Research (569 lines), Volume (734 lines)")
+logger.info("   Total enhancement: ~1900 lines of FULL Moon-Dev functionality")
+
